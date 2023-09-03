@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -13,7 +14,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import { IAggregator } from "@bisonai/orakl-contracts/src/v0.1/interfaces/IAggregator.sol";
 
-contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, PausableUpgradeable, AccessControlUpgradeable, ERC721BurnableUpgradeable {
+contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpgradeable ,ERC721EnumerableUpgradeable, PausableUpgradeable, AccessControlUpgradeable, ERC721BurnableUpgradeable {
     using Counters for Counters.Counter;
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
@@ -41,8 +42,6 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUp
     }
 
     Counters.Counter private _assetID;
-    string private _baseTokenURI;
-    string public _baseExtension;
 
     Asset[] private assets;
 
@@ -60,6 +59,8 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUp
         __Pausable_init();
         __AccessControl_init();
         __ERC721Burnable_init();
+        __ERC721URIStorage_init();
+
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PAUSER_ROLE, msg.sender);
@@ -67,26 +68,17 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUp
 
         _pause();
     }
-    
-    function setSpec() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _baseTokenURI = "https://nft.balue.xyz/";
-        _baseExtension = ".json";
+
+   function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
     }
 
-    function setBaseTokenURL(string memory _in_baseTokenURI) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _baseTokenURI = _in_baseTokenURI;
-    }
 
-    function _baseURI() internal view override returns (string memory) { 
-        return _baseTokenURI;
-    }
-
-    function tokenURI(uint256 _in_tokenId) public view virtual override returns (string memory) {
-        _requireMinted(_in_tokenId);
-
-        string memory baseURI = _baseURI();
-        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, _in_tokenId.toString(), _baseExtension)) : "";
-    }
 
     function setAggregator(address aggregatorProxy) public onlyRole(DEFAULT_ADMIN_ROLE) {
         dataFeed = IAggregator(aggregatorProxy);
@@ -100,7 +92,7 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUp
         _unpause();
     }
 
-    function _burn(uint256 _in_tokenId) internal override(ERC721Upgradeable) whenNotPaused onlyRole(DEFAULT_ADMIN_ROLE){
+    function _burn(uint256 _in_tokenId) internal override(ERC721URIStorageUpgradeable, ERC721Upgradeable) whenNotPaused onlyRole(DEFAULT_ADMIN_ROLE){
         super._burn(_in_tokenId);
     }
 
@@ -132,7 +124,7 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUp
         );
     } 
 
-    function safeMint(address _to, int256 _in_weight, uint256 _in_expire_time, uint16 _in_assetType, string memory _in_identifierCode ) public whenNotPaused  onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256)  {
+    function safeMint(address _to, int256 _in_weight, uint256 _in_expire_time, uint16 _in_assetType, string memory _in_identifierCode, string memory _in_token_uri) public whenNotPaused  onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256)  {
         uint256 assetId = _assetID.current();
         uint256 startTime = block.timestamp;
         _assetID.increment();
@@ -147,6 +139,7 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUp
         }));
         setAsset(_to, assetId, _in_weight, startTime, _in_expire_time, _in_identifierCode, uint16(assetType));
         _safeMint(_to, assetId);
+        _setTokenURI(assetId, _in_token_uri);
         return assetId;
     }
 
@@ -188,7 +181,7 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUp
         );
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, ERC721EnumerableUpgradeable, AccessControlUpgradeable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override(AccessControlUpgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC721Upgradeable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

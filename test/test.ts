@@ -28,14 +28,14 @@ describe("Transca Vault assests", function () {
     // console.log("-> 7s200:addr1:", addr1.address);
   };
 
-  const setSpec = async () => {
-    // await expect(transcaAssetNFTContract.connect(owner).setSpec()).to.not.reverted;
-    // await expect(transcaAssetNFTContract.connect(addr1).setSpec()).to.be.reverted;
+  // const setSpec = async () => {
+  //   // await expect(transcaAssetNFTContract.connect(owner).setSpec()).to.not.reverted;
+  //   // await expect(transcaAssetNFTContract.connect(addr1).setSpec()).to.be.reverted;
 
-    const s1 = await transcaAssetNFTContract.connect(owner).setSpec();
-    const s1wait = await s1.wait();
-    console.log("-> 0-setSpec:", s1wait);
-  };
+  //   const s1 = await transcaAssetNFTContract.connect(owner).setSpec();
+  //   const s1wait = await s1.wait();
+  //   console.log("-> 0-setSpec:", s1wait);
+  // };
 
   const unpause = async () => {
     // await expect(transcaAssetNFTContract.connect(owner).unpause()).to.not.reverted;
@@ -59,10 +59,11 @@ describe("Transca Vault assests", function () {
     const expireTime = ethers.BigNumber.from(expire);
     const assetType = ethers.BigNumber.from(1);
     const indentifierCode = "GOLDCODE1";
+    const tokenURI = "https://ipfs.io/ipfs/QmRkk4SkhzxKs7s9EkxP9zU9VpFfEMWRT3aYbRtdiE8oUY";
 
     beforeEach(async () => {
       await deploy();
-      await setSpec();
+      // await setSpec();
       await unpause();
     });
 
@@ -95,7 +96,7 @@ describe("Transca Vault assests", function () {
       const consummerWait = await consummer.wait();
       console.log("-> 1.2-consummer:", consummerWait);
 
-      const nft = await transcaAssetNFTContract.connect(owner).safeMint(owner.address, weight, expireTime, assetType, indentifierCode);
+      const nft = await transcaAssetNFTContract.connect(owner).safeMint(owner.address, weight, expireTime, assetType, indentifierCode, tokenURI);
       const nftWait = await nft.wait();
       console.log("-> 1.2-nft", nftWait);
 
