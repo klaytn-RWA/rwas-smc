@@ -43,7 +43,7 @@ describe("Transca Vault assests", function () {
 
     const u1 = await transcaAssetNFTContract.connect(owner).unpause();
     const u1wait = await u1.wait();
-    console.log("-> 0-unpause:", u1wait);
+    // console.log("-> 0-unpause:", u1wait);
   };
 
   const pause = async () => {
@@ -57,9 +57,14 @@ describe("Transca Vault assests", function () {
     const expire = now + 1_000;
     const weight = ethers.utils.parseUnits("1.5", "ether");
     const expireTime = ethers.BigNumber.from(expire);
-    const assetType = ethers.BigNumber.from(1);
+    const assetTypeGOLD = ethers.BigNumber.from(0);
+    const assetTypeDIAMOND = ethers.BigNumber.from(1);
+    const assetTypeOTHER = ethers.BigNumber.from(2);
     const indentifierCode = "GOLDCODE1";
     const tokenURI = "https://ipfs.io/ipfs/QmRkk4SkhzxKs7s9EkxP9zU9VpFfEMWRT3aYbRtdiE8oUY";
+    const userDefinePrice = ethers.BigNumber.from(0);
+    const userDefinePrice1 = ethers.BigNumber.from(1000);
+    const appraisalPrice = ethers.BigNumber.from(0);
 
     beforeEach(async () => {
       await deploy();
@@ -96,12 +101,38 @@ describe("Transca Vault assests", function () {
       const consummerWait = await consummer.wait();
       console.log("-> 1.2-consummer:", consummerWait);
 
-      const nft = await transcaAssetNFTContract.connect(owner).safeMint(owner.address, weight, expireTime, assetType, indentifierCode, tokenURI);
-      const nftWait = await nft.wait();
-      console.log("-> 1.2-nft", nftWait);
+      const nft = await transcaAssetNFTContract
+        .connect(owner)
+        .safeMint(owner.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
+      await nft.wait();
 
-      const nftDetail = await transcaAssetNFTContract.getAssetDetail(0);
-      console.log("-> 1.2-nft-detail", nftDetail);
+      console.log("7s2001");
+      const nft1 = await transcaAssetNFTContract
+        .connect(owner)
+        .safeMint(owner.address, weight, expireTime, assetTypeDIAMOND, indentifierCode, tokenURI, userDefinePrice1, appraisalPrice);
+      await nft1.wait();
+
+      console.log("7s2002");
+      const nft2 = await transcaAssetNFTContract
+        .connect(owner)
+        .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURI, userDefinePrice1, appraisalPrice);
+      await nft2.wait();
+
+      console.log("7s2003");
+      const nft3 = await transcaAssetNFTContract
+        .connect(owner)
+        .safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
+      await nft3.wait();
+
+      // const nftWait = await nft.wait();
+      // console.log("-> 1.2-nft", nftWait);
+
+      const nfts = await transcaAssetNFTContract.connect(owner).getAllAssetByUser();
+      const nfts2 = await transcaAssetNFTContract.connect(addr1).getAllAssetByUser();
+      console.log("7s200:nfts:1", nfts);
+      console.log("7s200:nfts:2", nfts2);
+      // const nftDetail = await transcaAssetNFTContract.getAssetDetail(0);
+      // console.log("-> 1.2-nft-detail", nftDetail);
     });
   });
 });

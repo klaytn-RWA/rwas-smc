@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import { IAggregator } from "@bisonai/orakl-contracts/src/v0.1/interfaces/IAggregator.sol";
 
-contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpgradeable ,ERC721EnumerableUpgradeable, PausableUpgradeable, AccessControlUpgradeable, ERC721BurnableUpgradeable {
+contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUpgradeable ,ERC721EnumerableUpgradeable, PausableUpgradeable, AccessControlUpgradeable, ERC721BurnableUpgradeable {
     using Counters for Counters.Counter;
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
@@ -23,8 +23,6 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-
-
 
     enum PhysicalType {
         GOLD,
@@ -39,6 +37,8 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
         uint16 _assetType;
         uint256 _startTime;
         uint256 _expireTime;
+        uint256 _userDefinePrice;
+        uint256 _appraisalPrice;
     }
 
     Counters.Counter private _assetID;
@@ -47,8 +47,7 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
 
     mapping (uint256 => Asset) public physicalAssetAttribute;
 
-
-     /// @custom:oz-upgrades-unsafe-allow constructor
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
@@ -78,8 +77,6 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
         return super.tokenURI(tokenId);
     }
 
-
-
     function setAggregator(address aggregatorProxy) public onlyRole(DEFAULT_ADMIN_ROLE) {
         dataFeed = IAggregator(aggregatorProxy);
     }
@@ -104,14 +101,16 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
         uint16 _assestType
     );
 
-    function setAsset(address _userAddress, uint256 _id, int256 _weight, uint256 _startTime,uint256 _expireTime, string memory _indentifierCode, uint16 _assetType) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setAsset(address _userAddress, uint256 _id, int256 _weight, uint256 _startTime,uint256 _expireTime, string memory _indentifierCode, uint16 _assetType, uint256 _userDefinePrice, uint256 _appraisalPrice) public onlyRole(DEFAULT_ADMIN_ROLE) {
         Asset memory attribute = Asset({
             _assetId: _id,
             _weight: _weight,
             _indentifierCode: _indentifierCode,
             _assetType: _assetType,
             _startTime: _startTime, // mint time
-            _expireTime: _expireTime
+            _expireTime: _expireTime,
+            _userDefinePrice: _userDefinePrice,
+            _appraisalPrice: _appraisalPrice
         });
         physicalAssetAttribute[_id] = attribute;
 
@@ -124,7 +123,7 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
         );
     } 
 
-    function safeMint(address _to, int256 _in_weight, uint256 _in_expire_time, uint16 _in_assetType, string memory _in_identifierCode, string memory _in_token_uri) public whenNotPaused  onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256)  {
+    function safeMint(address _to, int256 _in_weight, uint256 _in_expire_time, uint16 _in_assetType, string memory _in_identifierCode, string memory _in_token_uri, uint256 _in_user_define_price, uint256 in_appraisal_price) public whenNotPaused  onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256)  {
         uint256 assetId = _assetID.current();
         uint256 startTime = block.timestamp;
         _assetID.increment();
@@ -135,9 +134,11 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
             _indentifierCode: _in_identifierCode,
             _assetType: uint16(assetType),
             _startTime : startTime,
-            _expireTime: _in_expire_time
+            _expireTime: _in_expire_time,
+            _userDefinePrice: _in_user_define_price,
+            _appraisalPrice: in_appraisal_price
         }));
-        setAsset(_to, assetId, _in_weight, startTime, _in_expire_time, _in_identifierCode, uint16(assetType));
+        setAsset(_to, assetId, _in_weight, startTime, _in_expire_time, _in_identifierCode, uint16(assetType), _in_user_define_price, in_appraisal_price);
         _safeMint(_to, assetId);
         _setTokenURI(assetId, _in_token_uri);
         return assetId;
@@ -152,35 +153,60 @@ contract TranscaAssetNFT is Initializable,ERC721Upgradeable ,ERC721URIStorageUpg
         return answer_;
     }
 
+    struct AssetR {
+        address _owner;
+        uint256 _assetId;
+        int256 _weight;
+        string _indentifierCode;
+        uint16 _assetType;
+        uint256 _startTime;
+        uint256 _expireTime;
+        int256 _oraklPrice;
+        uint256 _userDefinePrice;
+        uint256 _appraisalPrice;
+    }
+
     function getAssetDetail(uint256 _in_asset_id)
         public
         view
         returns (
-            address,
-            uint256,
-            int256,
-            string memory,
-            uint16,
-            uint256,
-            uint256,
-            int256
+           AssetR memory
         )
     {
+        AssetR memory result;
         int256 price = getLatestData();
+        int256 tempOraklPrice = 0;
         Asset memory asset = assets[_in_asset_id];
-        address  owner = ERC721Upgradeable.ownerOf(_in_asset_id);
-        return (
-            owner,
-            asset._assetId,
-            asset._weight,
-            asset._indentifierCode,
-            asset._assetType,
-            asset._startTime,
-            asset._expireTime,
-            price*asset._weight
-        );
+        if (asset._assetType == 0) {
+            tempOraklPrice = price*asset._weight;
+        }
+        address owner = ERC721Upgradeable.ownerOf(_in_asset_id);
+        result._owner = owner;
+        result._assetId = _in_asset_id;
+        result._weight = asset._weight;
+        result._indentifierCode = asset._indentifierCode;
+        result._assetType = asset._assetType;
+        result._startTime = asset._startTime;
+        result._expireTime = asset._expireTime;
+        result._oraklPrice = tempOraklPrice;
+        result._userDefinePrice = asset._userDefinePrice;
+        result._appraisalPrice = asset._appraisalPrice;
+        return result;
     }
 
+    
+
+
+    function getAllAssetByUser() public view returns(AssetR[] memory){
+        uint256 tokenIds = balanceOf(msg.sender);
+        AssetR[] memory result = new AssetR[](tokenIds);
+        for(uint i=0; i < tokenIds; i++){
+            uint256 id = tokenOfOwnerByIndex(msg.sender,i);
+            result[i] = getAssetDetail(id);
+        }
+        return result;
+    }
+    
     function supportsInterface(bytes4 interfaceId) public view override(AccessControlUpgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC721Upgradeable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
