@@ -13,6 +13,8 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import { IAggregator } from "@bisonai/orakl-contracts/src/v0.1/interfaces/IAggregator.sol";
+import "./interfaces/ITransca.sol";
+
 
 contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUpgradeable ,ERC721EnumerableUpgradeable, PausableUpgradeable, AccessControlUpgradeable, ERC721BurnableUpgradeable {
     using Counters for Counters.Counter;
@@ -43,7 +45,7 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
 
     Counters.Counter private _assetID;
 
-    Asset[] private assets;
+    Asset[] public assets;
 
     mapping (uint256 => Asset) public physicalAssetAttribute;
 
@@ -153,27 +155,14 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
         return answer_;
     }
 
-    struct AssetR {
-        address _owner;
-        uint256 _assetId;
-        int256 _weight;
-        string _indentifierCode;
-        uint16 _assetType;
-        uint256 _startTime;
-        uint256 _expireTime;
-        int256 _oraklPrice;
-        uint256 _userDefinePrice;
-        uint256 _appraisalPrice;
-    }
-
     function getAssetDetail(uint256 _in_asset_id)
         public
         view
         returns (
-           AssetR memory
+           ITransca.AssetR memory
         )
     {
-        AssetR memory result;
+        ITransca.AssetR memory result;
         int256 price = getLatestData();
         int256 tempOraklPrice = 0;
         Asset memory asset = assets[_in_asset_id];
@@ -194,12 +183,28 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
         return result;
     }
 
-    
+    function ownerOf(uint256 _in_id) public view override(ERC721Upgradeable, IERC721Upgradeable) returns (address){
+        address owner = ERC721Upgradeable.ownerOf(_in_id);
+        return owner;
+    }
 
 
-    function getAllAssetByUser(address userAddress) public view returns(AssetR[] memory){
+    // function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual override returns (bool) {
+    //     require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+    //     address owner = ERC721Upgradeable.ownerOf(tokenId);
+    //     return (spender == owner || getApproved(tokenId) == spender || ERC721Upgradeable.isApprovedForAll(owner, spender));
+    // }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public virtual override(ERC721Upgradeable, IERC721Upgradeable) {
+        // require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: transfer caller is not owner nor approved");
+        address owner = ownerOf(tokenId);
+        require(owner == from, "ERC721: transfer caller is not owner nor approved");
+        _safeTransfer(from, to, tokenId, _data);
+    }
+
+    function getAllAssetByUser(address userAddress) public view returns(ITransca.AssetR[] memory){
         uint256 tokenIds = balanceOf(userAddress);
-        AssetR[] memory result = new AssetR[](tokenIds);
+        ITransca.AssetR[] memory result = new ITransca.AssetR[](tokenIds);
         require(tokenIds > 0, "NFTs count equal zero!");
         for(uint i=0; i < tokenIds; i++){
             uint256 id = tokenOfOwnerByIndex(userAddress,i);

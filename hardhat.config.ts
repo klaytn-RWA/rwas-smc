@@ -11,7 +11,7 @@ import { HardhatUserConfig } from "hardhat/config";
 dotenv.config({ path: __dirname + "/.env" });
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "baobab",
+  // defaultNetwork: "baobab",
 
   solidity: {
     compilers: [
