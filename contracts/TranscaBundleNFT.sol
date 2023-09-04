@@ -68,8 +68,8 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
 
         for (uint256 index = 0; index < _nftIds.length; index++) {
             assetContract.safeTransferFrom(msg.sender, address(this), _nftIds[index]);
-            // _deposit(planetAddr, shipIds[index], amounts[index], _msgSender());
         }
+        // [TO-DO] after deposit mint bundle - widthdraw - burn bundle
     }
 
     
