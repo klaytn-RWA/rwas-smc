@@ -123,13 +123,18 @@ describe("Transca Vault assests", function () {
       const signature = await owner.signMessage(hash);
       console.log("7s200:sig", signature);
 
-      const mintBundle = await transcaBundleNFTContract.mintBundle([0, 1], signature);
+      const mintBundle = await transcaBundleNFTContract.deposit([0, 1], signature);
+      console.log("7s200:bundle", mintBundle);
       const mintwait = await mintBundle.wait();
-      console.log("7s200:", mintwait);
+      console.log("7s200:mintwait", mintwait);
+
       const ownerOf2 = await transcaAssetNFTContract.ownerOf(0);
       console.log("7s200:owner-of-0", ownerOf2);
       const ownerOf3 = await transcaAssetNFTContract.ownerOf(1);
       console.log("7s200:owner-of-1", ownerOf3);
+
+      const bundleDetail = await transcaBundleNFTContract.getBundle(0);
+      console.log("7s200:bundleDetail", bundleDetail);
 
       // const bundle = await transcaBundleNFTContract.getAssetAttribute(0);
       // console.log("7s200:bundle", bundle);

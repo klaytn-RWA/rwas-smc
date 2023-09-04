@@ -21,17 +21,23 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
     TranscaAssetNFT assetContract;
 
     struct TranscaBundle {
-        uint256 bundleId;
+        uint256 _bundleId;
         // address[] nftSC;
-        uint256[] nftIds;
+        uint256[] _assetIds;
     }
 
-    Counters.Counter private _assetID;
+    Counters.Counter private _bundleId;
     TranscaBundle[] private bundles;
 
+    mapping (uint256 => TranscaBundle) public transcaBundleAttribute;
 
-    mapping (uint256 => TranscaBundle) public TranscaBundleAttribute;
-
+    function initialize() public initializer {
+        __ERC721_init("Transca Bundle NFTs", "TBN");
+        __ERC721Enumerable_init();
+      
+        __ERC721Burnable_init();
+        __ERC721URIStorage_init();
+    }
 
     function tokenURI(uint256 tokenId)
         public
@@ -46,7 +52,27 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
         assetContract = TranscaAssetNFT(_address);            
     }
 
-     function onERC721Received(
+    event Issue(
+        address indexed _userAddress,
+        uint256 indexed _id,
+        uint256[] _ids
+    );
+
+    function setBundle(address _userAddress, uint256 _id, uint256[] memory _ids) public {
+        TranscaBundle memory attribute = TranscaBundle({
+            _bundleId: _id,
+            _assetIds: _ids
+        });
+        transcaBundleAttribute[_id] = attribute;
+
+        emit Issue(
+            _userAddress,
+            _id,
+            _ids
+        );
+    } 
+
+    function onERC721Received(
         address,
         address,
         uint256,
@@ -60,16 +86,37 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
         return att;
     }
 
-    function mintBundle(uint256[] memory _nftIds, bytes memory signature) public {
+    function deposit(uint256[] memory _nftIds, bytes memory signature) public returns (uint256[] memory) {
         bytes32 message = keccak256(
             abi.encodePacked(_msgSender(), _nftIds)
         );
         require(recoverSigner(prefixed(message), signature) == msg.sender, "Auth signature not match");
+        
+        uint256[] memory ids = new uint256[](_nftIds.length);
 
         for (uint256 index = 0; index < _nftIds.length; index++) {
             assetContract.safeTransferFrom(msg.sender, address(this), _nftIds[index]);
+            ids[index] = assetContract.getAssetDetailNonOracle(_nftIds[index])._assetId;
         }
+        safeMint(msg.sender,ids);
+        return ids;
         // [TO-DO] after deposit mint bundle - widthdraw - burn bundle
+    }
+
+    function safeMint(address _to, uint256[] memory _ids) private returns (uint256) {
+        uint256 bundleId = _bundleId.current();
+        bundles.push(TranscaBundle({
+            _bundleId: bundleId,
+            _assetIds: _ids
+        }));
+        setBundle(msg.sender,bundleId, _ids);
+        _safeMint(_to, bundleId);
+        return bundleId;
+    }
+
+    function getBundle(uint256 _in_bundle_id) public view returns (TranscaBundle memory) {
+        TranscaBundle memory bundle = bundles[_in_bundle_id];
+        return bundle;
     }
 
     

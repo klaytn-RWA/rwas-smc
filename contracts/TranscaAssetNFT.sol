@@ -32,22 +32,12 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
         OTHER
     }
 
-    struct Asset { 
-        uint256 _assetId;
-        int256 _weight;
-        string _indentifierCode;
-        uint16 _assetType;
-        uint256 _startTime;
-        uint256 _expireTime;
-        uint256 _userDefinePrice;
-        uint256 _appraisalPrice;
-    }
 
     Counters.Counter private _assetID;
 
-    Asset[] public assets;
+    ITransca.Asset[] public assets;
 
-    mapping (uint256 => Asset) public physicalAssetAttribute;
+    mapping (uint256 => ITransca.Asset) public physicalAssetAttribute;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -104,7 +94,7 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
     );
 
     function setAsset(address _userAddress, uint256 _id, int256 _weight, uint256 _startTime,uint256 _expireTime, string memory _indentifierCode, uint16 _assetType, uint256 _userDefinePrice, uint256 _appraisalPrice) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        Asset memory attribute = Asset({
+        ITransca.Asset memory attribute = ITransca.Asset({
             _assetId: _id,
             _weight: _weight,
             _indentifierCode: _indentifierCode,
@@ -130,7 +120,7 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
         uint256 startTime = block.timestamp;
         _assetID.increment();
         PhysicalType assetType = PhysicalType(_in_assetType);
-        assets.push(Asset({
+        assets.push(ITransca.Asset({
             _assetId: assetId,
             _weight : _in_weight,
             _indentifierCode: _in_identifierCode,
@@ -165,23 +155,30 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
         ITransca.AssetR memory result;
         int256 price = getLatestData();
         int256 tempOraklPrice = 0;
-        Asset memory asset = assets[_in_asset_id];
+        ITransca.Asset memory asset = assets[_in_asset_id];
         if (asset._assetType == 0) {
             tempOraklPrice = price*asset._weight;
         }
         address owner = ERC721Upgradeable.ownerOf(_in_asset_id);
         result._owner = owner;
         result._assetId = _in_asset_id;
-        result._weight = asset._weight;
-        result._indentifierCode = asset._indentifierCode;
-        result._assetType = asset._assetType;
-        result._startTime = asset._startTime;
-        result._expireTime = asset._expireTime;
         result._oraklPrice = tempOraklPrice;
-        result._userDefinePrice = asset._userDefinePrice;
-        result._appraisalPrice = asset._appraisalPrice;
         return result;
     }
+
+    function getAssetDetailNonOracle(uint256 _in_asset_id)
+        public
+        view
+        returns (
+           ITransca.Asset memory
+        )
+    {
+        ITransca.Asset memory result;
+        ITransca.Asset memory asset = assets[_in_asset_id];
+        result._assetId = _in_asset_id;
+        return asset;
+    }
+
 
     function ownerOf(uint256 _in_id) public view override(ERC721Upgradeable, IERC721Upgradeable) returns (address){
         address owner = ERC721Upgradeable.ownerOf(_in_id);
