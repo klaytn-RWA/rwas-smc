@@ -23,7 +23,7 @@ describe("Transca Vault assests", function () {
     const transcaAssetNFTContractFactory = await ethers.getContractFactory("TranscaAssetNFT");
     const deployTranscaAssetNFT = await upgrades.deployProxy(transcaAssetNFTContractFactory);
     transcaAssetNFTContract = await deployTranscaAssetNFT.deployed();
-    // console.log("-> 7s200:contract:", transcaAssetNFTContract.address);
+    console.log("-> 7s200:contract:", transcaAssetNFTContract.address);
     // console.log("-> 7s200:owner:", owner.address);
     // console.log("-> 7s200:addr1:", addr1.address);
   };
@@ -100,35 +100,29 @@ describe("Transca Vault assests", function () {
       const consummer = await transcaAssetNFTContract.connect(owner).setAggregator(aggregatorProxyXAU);
       const consummerWait = await consummer.wait();
       console.log("-> 1.2-consummer:", consummerWait);
-
       const nft = await transcaAssetNFTContract
         .connect(owner)
         .safeMint(owner.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
       await nft.wait();
-
       console.log("7s2001");
       const nft1 = await transcaAssetNFTContract
         .connect(owner)
         .safeMint(owner.address, weight, expireTime, assetTypeDIAMOND, indentifierCode, tokenURI, userDefinePrice1, appraisalPrice);
       await nft1.wait();
-
       console.log("7s2002");
       const nft2 = await transcaAssetNFTContract
         .connect(owner)
         .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURI, userDefinePrice1, appraisalPrice);
       await nft2.wait();
-
       console.log("7s2003");
       const nft3 = await transcaAssetNFTContract
         .connect(owner)
         .safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
       await nft3.wait();
-
       // const nftWait = await nft.wait();
       // console.log("-> 1.2-nft", nftWait);
-
-      const nfts = await transcaAssetNFTContract.connect(owner).getAllAssetByUser();
-      const nfts2 = await transcaAssetNFTContract.connect(addr1).getAllAssetByUser();
+      const nfts = await transcaAssetNFTContract.getAllAssetByUser(owner);
+      const nfts2 = await transcaAssetNFTContract.getAllAssetByUser(addr1);
       console.log("7s200:nfts:1", nfts);
       console.log("7s200:nfts:2", nfts2);
       // const nftDetail = await transcaAssetNFTContract.getAssetDetail(0);

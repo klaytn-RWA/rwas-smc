@@ -197,11 +197,12 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
     
 
 
-    function getAllAssetByUser() public view returns(AssetR[] memory){
-        uint256 tokenIds = balanceOf(msg.sender);
+    function getAllAssetByUser(address userAddress) public view returns(AssetR[] memory){
+        uint256 tokenIds = balanceOf(userAddress);
         AssetR[] memory result = new AssetR[](tokenIds);
+        require(tokenIds > 0, "NFTs count equal zero!");
         for(uint i=0; i < tokenIds; i++){
-            uint256 id = tokenOfOwnerByIndex(msg.sender,i);
+            uint256 id = tokenOfOwnerByIndex(userAddress,i);
             result[i] = getAssetDetail(id);
         }
         return result;
