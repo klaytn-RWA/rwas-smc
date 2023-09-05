@@ -114,12 +114,30 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
         return bundleId;
     }
 
+    function withdraw(uint256 _in_bundle_id) public returns (uint256[] memory){
+        address owner = ERC721Upgradeable.ownerOf(_in_bundle_id);
+        require(owner == msg.sender,"Not owner");
+        TranscaBundle memory bundle = bundles[_in_bundle_id];
+        uint256[] memory ids = new uint256[](bundle._assetIds.length);
+        for (uint256 index = 0; index < bundle._assetIds.length; index++) {
+            assetContract.safeTransferFrom(address(this), msg.sender,  bundle._assetIds[index]);
+            ids[index] = bundle._assetIds[index];
+        }
+        _burn(_in_bundle_id);
+        delete transcaBundleAttribute[_in_bundle_id];
+        delete bundles[_in_bundle_id];
+        return ids;
+    }
+
     function getBundle(uint256 _in_bundle_id) public view returns (TranscaBundle memory) {
         TranscaBundle memory bundle = bundles[_in_bundle_id];
         return bundle;
     }
 
-    
+    function getOwner(uint256 _in_bundle_id) public view returns (address){
+       address owner = ownerOf(_in_bundle_id);
+       return owner; 
+    }
 
     function _burn(uint256 _in_tokenId) internal override(ERC721URIStorageUpgradeable, ERC721Upgradeable){
         super._burn(_in_tokenId);

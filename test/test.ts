@@ -99,7 +99,7 @@ describe("Transca Vault assests", function () {
       await nft.wait();
       console.log("7s2001");
       const ownerOf = await transcaAssetNFTContract.ownerOf(0);
-      console.log("7s200:owner-of-0", ownerOf);
+      console.log("7s200:owner-of-0:before", ownerOf);
 
       const nft1 = await transcaAssetNFTContract
         .connect(owner)
@@ -107,7 +107,7 @@ describe("Transca Vault assests", function () {
       await nft1.wait();
       console.log("7s2002");
       const ownerOf1 = await transcaAssetNFTContract.ownerOf(1);
-      console.log("7s200:owner-of-1", ownerOf1);
+      console.log("7s200:owner-of-1:before", ownerOf1);
       // const nft2 = await transcaAssetNFTContract
       //   .connect(owner)
       //   .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURI, userDefinePrice1, appraisalPrice);
@@ -118,10 +118,7 @@ describe("Transca Vault assests", function () {
       //   .safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
       // await nft3.wait();
       const hash = abi.soliditySHA3(["address", "uint256[]"], [new BN(owner.address.slice(2), 16), [new BN(0, 10), new BN(1, 10)]]);
-      console.log("7s200:hash", hash);
-
       const signature = await owner.signMessage(hash);
-      console.log("7s200:sig", signature);
 
       const mintBundle = await transcaBundleNFTContract.deposit([0, 1], signature);
       console.log("7s200:bundle", mintBundle);
@@ -129,12 +126,27 @@ describe("Transca Vault assests", function () {
       console.log("7s200:mintwait", mintwait);
 
       const ownerOf2 = await transcaAssetNFTContract.ownerOf(0);
-      console.log("7s200:owner-of-0", ownerOf2);
+      console.log("7s200:owner-of-0:after", ownerOf2);
       const ownerOf3 = await transcaAssetNFTContract.ownerOf(1);
-      console.log("7s200:owner-of-1", ownerOf3);
+      console.log("7s200:owner-of-1:after", ownerOf3);
 
       const bundleDetail = await transcaBundleNFTContract.getBundle(0);
       console.log("7s200:bundleDetail", bundleDetail);
+      const ownerOfbundleAfterMint = await transcaBundleNFTContract.getOwner(0);
+      console.log("7s200:owner-bundle-after-mint", ownerOfbundleAfterMint);
+
+      // [Withdraw NFTs on bundle by bundle id]
+      const withdraw = await transcaBundleNFTContract.withdraw(0);
+      console.log("7s200:bundle:withdraw", withdraw);
+
+      const ownerOf4 = await transcaAssetNFTContract.ownerOf(0);
+      console.log("7s200:owner-of-0:withdraw", ownerOf4);
+      const ownerOf5 = await transcaAssetNFTContract.ownerOf(1);
+      console.log("7s200:owner-of-1:withdraw", ownerOf5);
+      const bundleDetail2 = await transcaBundleNFTContract.getBundle(0);
+      console.log("7s200:bundleDetail", bundleDetail2);
+      const ownerOfbundleAfterWithdraw = await transcaBundleNFTContract.getOwner(0);
+      console.log("7s200:owner-bundle-after", ownerOfbundleAfterWithdraw);
 
       // const bundle = await transcaBundleNFTContract.getAssetAttribute(0);
       // console.log("7s200:bundle", bundle);
