@@ -163,6 +163,13 @@ contract TranscaAssetNFT is Initializable, ERC721Upgradeable ,ERC721URIStorageUp
         result._owner = owner;
         result._assetId = _in_asset_id;
         result._oraklPrice = tempOraklPrice;
+        result._weight = asset._weight;
+        result._indentifierCode = asset._indentifierCode;
+        result._assetType = asset._assetType;
+        result._startTime = asset._startTime;
+        result._expireTime = asset._expireTime;
+        result._userDefinePrice = asset._userDefinePrice;
+        result._appraisalPrice = asset._appraisalPrice;
         return result;
     }
 

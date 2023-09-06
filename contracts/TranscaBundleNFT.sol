@@ -109,8 +109,10 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
             _bundleId: bundleId,
             _assetIds: _ids
         }));
+        
         setBundle(msg.sender,bundleId, _ids);
         _safeMint(_to, bundleId);
+        _setTokenURI(bundleId, "https://ipfs.io/ipfs/QmQw37CrbijdhhX3ZfRYFU9nWqLbHUUwjpr6fZtuf9mKDv");
         return bundleId;
     }
 
@@ -132,6 +134,17 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
     function getBundle(uint256 _in_bundle_id) public view returns (TranscaBundle memory) {
         TranscaBundle memory bundle = bundles[_in_bundle_id];
         return bundle;
+    }
+    
+    function getAllBunelByOwner(address _in_address) public view returns (TranscaBundle[] memory){
+        uint256 tokenIds = balanceOf(_in_address);
+        TranscaBundle[] memory result = new TranscaBundle[](tokenIds);
+        require(tokenIds > 0, "NFTs count equal zero!");
+        for(uint i=0; i < tokenIds; i++){
+            uint256 id = tokenOfOwnerByIndex(_in_address,i);
+            result[i] = bundles[id];
+        }
+        return result;
     }
 
     function getOwner(uint256 _in_bundle_id) public view returns (address){
