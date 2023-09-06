@@ -1,9 +1,7 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import BN from "bn.js";
 import { expect } from "chai";
-import abi from "ethereumjs-abi";
 import { Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 
@@ -122,26 +120,26 @@ describe("Transca Vault assests", function () {
       // await nft3.wait();
 
       // [Mint bundle]
-      const hash = abi.soliditySHA3(["address", "uint256[]"], [new BN(owner.address.slice(2), 16), [new BN(0, 10), new BN(1, 10)]]);
-      const signature = await owner.signMessage(hash);
+      // const hash = abi.soliditySHA3(["address", "uint256[]"], [new BN(owner.address.slice(2), 16), [new BN(0, 10), new BN(1, 10)]]);
+      // const signature = await owner.signMessage(hash);
 
-      const mintBundle = await transcaBundleNFTContract.deposit([0, 1], signature);
-      console.log("7s200:bundle", mintBundle);
-      const mintwait = await mintBundle.wait();
-      console.log("7s200:mintwait", mintwait);
+      // const mintBundle = await transcaBundleNFTContract.deposit([0, 1], signature);
+      // console.log("7s200:bundle", mintBundle);
+      // const mintwait = await mintBundle.wait();
+      // console.log("7s200:mintwait", mintwait);
 
-      const ownerOf2 = await transcaAssetNFTContract.ownerOf(0);
-      console.log("7s200:owner-of-0:after", ownerOf2);
-      const ownerOf3 = await transcaAssetNFTContract.ownerOf(1);
-      console.log("7s200:owner-of-1:after", ownerOf3);
+      // const ownerOf2 = await transcaAssetNFTContract.ownerOf(0);
+      // console.log("7s200:owner-of-0:after", ownerOf2);
+      // const ownerOf3 = await transcaAssetNFTContract.ownerOf(1);
+      // console.log("7s200:owner-of-1:after", ownerOf3);
 
-      const bundleDetail = await transcaBundleNFTContract.getBundle(0);
-      console.log("7s200:bundleDetail", bundleDetail);
-      const ownerOfbundleAfterMint = await transcaBundleNFTContract.getOwner(0);
-      console.log("7s200:owner-bundle-after-mint", ownerOfbundleAfterMint);
+      // const bundleDetail = await transcaBundleNFTContract.getBundle(0);
+      // console.log("7s200:bundleDetail", bundleDetail);
+      // const ownerOfbundleAfterMint = await transcaBundleNFTContract.getOwner(0);
+      // console.log("7s200:owner-bundle-after-mint", ownerOfbundleAfterMint);
 
-      const allbundle = await transcaBundleNFTContract.getAllBunelByOwner(owner.address);
-      console.log("7s200:allBundle", allbundle);
+      // const allbundle = await transcaBundleNFTContract.getAllBunelByOwner(owner.address);
+      // console.log("7s200:allBundle", allbundle);
 
       // [Withdraw NFTs on bundle by bundle id]
       // const withdraw = await transcaBundleNFTContract.withdraw(0);

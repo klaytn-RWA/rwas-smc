@@ -86,11 +86,11 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
         return att;
     }
 
-    function deposit(uint256[] memory _nftIds, bytes memory signature) public returns (uint256[] memory) {
-        bytes32 message = keccak256(
-            abi.encodePacked(_msgSender(), _nftIds)
-        );
-        require(recoverSigner(prefixed(message), signature) == msg.sender, "Auth signature not match");
+    function deposit(uint256[] memory _nftIds) public returns (uint256[] memory) {
+        // bytes32 message = keccak256(
+        //     abi.encodePacked(_msgSender(), _nftIds)
+        // );
+        // require(recoverSigner(prefixed(message), signature) == msg.sender, "Auth signature not match");
         
         uint256[] memory ids = new uint256[](_nftIds.length);
 
