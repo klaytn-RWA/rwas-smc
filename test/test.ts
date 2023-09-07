@@ -9,17 +9,23 @@ describe("Transca Vault assests", function () {
   // Contracts:
   let transcaAssetNFTContract: Contract;
   let transcaBundleNFTContract: Contract;
+  let transcaBorrowContract: Contract;
+  let transcaToken: Contract;
 
   // Address:
-  let owner: SignerWithAddress, addr1: SignerWithAddress;
+  let owner: SignerWithAddress, addr1: SignerWithAddress, addr2: SignerWithAddress;
 
   // Variable:
   const aggregatorProxyXAU = "0x555E072996d0335Ec63B448ddD507CB99379C723";
 
   const deploy = async () => {
-    [owner, addr1] = await ethers.getSigners();
+    [owner, addr1, addr2] = await ethers.getSigners();
 
     // Deploy
+    const transcaTokenContractFactory = await ethers.getContractFactory("USDTSimulator");
+    transcaToken = await (await transcaTokenContractFactory.deploy("USDT", "USDT")).deployed();
+    console.log("7s200:token:contract", transcaToken.address);
+
     const transcaAssetNFTContractFactory = await ethers.getContractFactory("TranscaAssetNFT");
     const deployTranscaAssetNFT = await upgrades.deployProxy(transcaAssetNFTContractFactory);
     transcaAssetNFTContract = await deployTranscaAssetNFT.deployed();
@@ -28,10 +34,14 @@ describe("Transca Vault assests", function () {
     const transcaBundleNFTContractFactory = await ethers.getContractFactory("TranscaBundleNFT");
     const deployTranscaBundleNFT = await upgrades.deployProxy(transcaBundleNFTContractFactory);
     transcaBundleNFTContract = await deployTranscaBundleNFT.deployed();
-    console.log("7s200:bundle:contract", transcaBundleNFTContract.address);
-
     const setcontract = await transcaBundleNFTContract.setAddress(transcaAssetNFTContract.address);
     await setcontract.wait();
+    console.log("7s200:bundle:contract", transcaBundleNFTContract.address);
+
+    const transcaBorrowContractFactory = await ethers.getContractFactory("TranscaBorrow");
+    const deployTranscaBorrow = await upgrades.deployProxy(transcaBorrowContractFactory, [transcaToken.address, transcaAssetNFTContract.address, transcaBundleNFTContract.address]);
+    transcaBorrowContract = await deployTranscaBorrow.deployed();
+    console.log("7s200:borrow:contract", transcaBorrowContract.address);
   };
 
   const unpause = async () => {
@@ -67,38 +77,15 @@ describe("Transca Vault assests", function () {
       await unpause();
     });
 
-    // describe("1.0 - pause can't mint NFT", function () {
-    //   beforeEach(async () => {
-    //     await pause();
-    //   });
-    //   it("1.0.1 - user can't mint NFT", async function () {
-    //     await expect(transcaAssetNFTContract.connect(addr1).safeMint(addr1.address, weight, expireTime, assetType, indentifierCode)).to.be.reverted;
-    //   });
-    //   it("1.0.1 - owner can't mint NFT", async function () {
-    //     await expect(transcaAssetNFTContract.connect(owner).safeMint(addr1.address, weight, expireTime, assetType, indentifierCode)).to.be.reverted;
-    //   });
-    // });
-
-    // it("1.1 - unpause can mint NFT", async function () {
-    //   await expect(transcaAssetNFTContract.connect(owner).safeMint(addr1.address, weight, expireTime, assetType, indentifierCode)).to.be.not.reverted;
-    // });
-
-    // it("1.2 - use can't mint NFT", async function () {
-    //   await expect(transcaAssetNFTContract.connect(addr1).safeMint(addr1.address, weight, expireTime, assetType, indentifierCode)).to.be.reverted;
-    // });
-
-    // it("1.3 - owner can mint NFT", async () => {
-    //   await expect(transcaAssetNFTContract.connect(owner).safeMint(addr1.address, weight, expireTime, assetType, indentifierCode)).to.be.not.reverted;
-    // });
-
     it("2.0 Should mint NFT to user", async function () {
       const consummer = await transcaAssetNFTContract.connect(owner).setAggregator(aggregatorProxyXAU);
       await consummer.wait();
+
+      // [MintNFT]
       const nft = await transcaAssetNFTContract
         .connect(owner)
         .safeMint(owner.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
       await nft.wait();
-      console.log("7s2001");
       const ownerOf = await transcaAssetNFTContract.ownerOf(0);
       console.log("7s200:owner-of-0:before", ownerOf);
 
@@ -106,18 +93,68 @@ describe("Transca Vault assests", function () {
         .connect(owner)
         .safeMint(owner.address, weight, expireTime, assetTypeDIAMOND, indentifierCode, tokenURIDiamond, userDefinePrice, appraisalPrice1);
       await nft1.wait();
-      console.log("7s2002");
       const ownerOf1 = await transcaAssetNFTContract.ownerOf(1);
       console.log("7s200:owner-of-1:before", ownerOf1);
+
       const nft2 = await transcaAssetNFTContract
         .connect(owner)
         .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice);
       await nft2.wait();
-      console.log("7s2003");
       const nft3 = await transcaAssetNFTContract
         .connect(owner)
         .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice);
       await nft3.wait();
+      const ownerOf3 = await transcaAssetNFTContract.ownerOf(1);
+      console.log("7s200:owner-of-3:before", ownerOf3);
+
+      // [Borrow - Request]
+      const nftId = 0;
+      const _inLoanAmount = ethers.utils.parseUnits("50", 18);
+      const _inInterateRateAmount = ethers.utils.parseUnits("10", 18);
+      const _inDuration = 100_000;
+
+      const borrowRequest = await transcaBorrowContract.connect(owner).createBorrowAsset(nftId, false, _inLoanAmount, _inInterateRateAmount, _inDuration);
+      await borrowRequest.wait();
+      const ownerOf0AferCreateBorrowReq = await transcaAssetNFTContract.ownerOf(0);
+      console.log("7s200:owner-of-0:before", ownerOf0AferCreateBorrowReq);
+
+      const allBorrowReq = await transcaBorrowContract.getAllBorrowsRequest();
+      console.log("7s200:allBorrow", allBorrowReq);
+
+      // [Balance-of]
+      await transcaToken.connect(owner).transfer(addr1.address, ethers.utils.parseUnits("500000", 18));
+      await transcaToken.connect(owner).transfer(addr2.address, ethers.utils.parseUnits("100000", 18));
+
+      await transcaToken.connect(owner).approve(transcaBorrowContract.address, ethers.utils.parseUnits("10000", 18), { from: owner.address });
+      await transcaToken.connect(addr1).approve(transcaBorrowContract.address, ethers.utils.parseUnits("10000", 18), { from: addr1.address });
+      await transcaToken.connect(addr2).approve(transcaBorrowContract.address, ethers.utils.parseUnits("10000", 18), { from: addr2.address });
+
+      // [User 1,2 create lend offer req]
+      const user1BalanceBeforeCreateReq = await transcaToken.balanceOf(addr1.address);
+      console.log("7s200:user1BalanceBeforeCreateReq:", user1BalanceBeforeCreateReq);
+      const user2BalanceBeforeCreateReq = await transcaToken.balanceOf(addr2.address);
+      console.log("7s200:user2BalanceBeforeCreateReq:", user2BalanceBeforeCreateReq);
+      const smcBalanceBeforeCreatereq = await transcaToken.balanceOf(transcaBorrowContract.address);
+      console.log("7s200:balance:1", smcBalanceBeforeCreatereq);
+
+      const user1LendReq = await transcaBorrowContract
+        .connect(addr1)
+        .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("45", 18), ethers.utils.parseUnits("5", 18), _inDuration);
+      await user1LendReq.wait();
+      const user2LendReq = await transcaBorrowContract
+        .connect(addr2)
+        .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("30", 18), ethers.utils.parseUnits("4", 18), _inDuration);
+      await user2LendReq.wait();
+
+      const allLenderByBorrowReq = await transcaBorrowContract.getAllLendReqByNFTId(allBorrowReq[0]._borrowReqId);
+      console.log("7s200:allLenderByBorrowReq", allLenderByBorrowReq);
+
+      const user1BalanceAfterCreateReq = await transcaToken.balanceOf(addr1.address);
+      console.log("7s200:user1BalanceAfterCreateReq", user1BalanceAfterCreateReq);
+      const user2BalanceAfterCreateReq = await transcaToken.balanceOf(addr2.address);
+      console.log("7s200:user1BalanceAfterCreateReq", user2BalanceAfterCreateReq);
+      const balanceOfSMCAfterCreateReq = await transcaToken.balanceOf(transcaBorrowContract.address);
+      console.log("7s200:balanceOfSMCAfterCreateReq", balanceOfSMCAfterCreateReq);
 
       // [Mint bundle]
       // const mintBundle = await transcaBundleNFTContract.deposit([0, 1]);

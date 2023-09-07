@@ -11,7 +11,7 @@ import { HardhatUserConfig } from "hardhat/config";
 dotenv.config({ path: __dirname + "/.env" });
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "baobab",
+  // defaultNetwork: "baobab",
 
   solidity: {
     compilers: [
@@ -34,7 +34,7 @@ const config: HardhatUserConfig = {
     baobab: {
       url: "https://api.baobab.klaytn.net:8651",
       timeout: 2_147_483_647,
-      accounts: [process.env.PRIVATE_KEY!, process.env.PRIVATE_KEY_1!],
+      accounts: [process.env.PRIVATE_KEY!, process.env.PRIVATE_KEY_1!, process.env.PRIVATE_KEY_2!],
       gas: 5242880,
       gasPrice: 51640625000,
     },
