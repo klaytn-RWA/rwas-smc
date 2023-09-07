@@ -12,16 +12,16 @@ dotenv.config({ path: __dirname + "/.env" });
 
 const config: HardhatUserConfig = {
   // defaultNetwork: "baobab",
-
   solidity: {
     compilers: [
       {
         version: "0.8.20",
         settings: {
           evmVersion: "paris",
+          viaIR: true,
           optimizer: {
             enabled: true,
-            runs: 1000,
+            runs: 10_000,
           },
         },
       },
@@ -52,14 +52,6 @@ const config: HardhatUserConfig = {
     ethereum: {
       url: "https://eth-mainnet.g.alchemy.com/v2/22gU7WLjJUMVrvia8yOmeU8MDanUuLdW",
       accounts: [process.env.PRIVATE_KEY!],
-      timeout: 2_147_483_647,
-    },
-    cross: {
-      url: "https://rpc-kura.cross.technology",
-      // "https://testnet.cvcscan.com"
-      chainId: 5555,
-      accounts: [process.env.PRIVATE_KEY!],
-      allowUnlimitedContractSize: true,
       timeout: 2_147_483_647,
     },
   },

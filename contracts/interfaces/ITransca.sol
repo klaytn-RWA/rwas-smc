@@ -1,28 +1,39 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
-interface ITransca{
-  
-  struct AssetR {
-        address _owner;
-        uint256 _assetId;
-        int256 _weight;
-        string _indentifierCode;
-        uint16 _assetType;
-        uint256 _startTime;
-        uint256 _expireTime;
-        int256 _oraklPrice;
-        uint256 _userDefinePrice;
-        uint256 _appraisalPrice;
-  }
 
-  struct Asset { 
-        uint256 _assetId;
-        int256 _weight;
-        string _indentifierCode;
-        uint16 _assetType;
-        uint256 _startTime;
-        uint256 _expireTime;
-        uint256 _userDefinePrice;
-        uint256 _appraisalPrice;
-  }
+interface ITransca {
+    struct AssetR {
+        address owner;
+        //
+        uint256 assetId;
+        //
+        int256 weight;
+        //
+        string indentifierCode;
+        //
+        uint16 assetType;
+        //
+        uint256 startTime;
+        uint256 expireTime;
+        //
+        int256 oraklPrice;
+        int256 userDefinePrice;
+        int256 appraisalPrice;
+    }
+
+    struct Asset {
+        uint256 assetId;
+        //
+        int256 weight;
+        //
+        string indentifierCode;
+        //
+        uint16 assetType;
+        //
+        uint256 startTime;
+        uint256 expireTime;
+        //
+        int256 userDefinePrice;
+        int256 appraisalPrice;
+    }
 }

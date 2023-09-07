@@ -1,180 +1,174 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
-import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import { IAggregator } from "@bisonai/orakl-contracts/src/v0.1/interfaces/IAggregator.sol";
+
 import "./TranscaAssetNFT.sol";
 import "./interfaces/ITransca.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import {IAggregator} from "@bisonai/orakl-contracts/src/v0.1/interfaces/IAggregator.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Upgradeable ,ERC721URIStorageUpgradeable ,ERC721EnumerableUpgradeable, ERC721BurnableUpgradeable {
+contract TranscaBundleNFT is
+    Initializable,
+    AccessControlUpgradeable,
+    PausableUpgradeable,
+    ERC721Upgradeable,
+    ERC721EnumerableUpgradeable,
+    IERC721ReceiverUpgradeable,
+    ERC721URIStorageUpgradeable,
+    ERC721BurnableUpgradeable
+{
     using Counters for Counters.Counter;
     using AddressUpgradeable for address;
-    TranscaAssetNFT assetContract;
+
+    TranscaAssetNFT public assetNft;
+
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     struct TranscaBundle {
-        uint256 _bundleId;
-        // address[] nftSC;
-        uint256[] _assetIds;
+        uint256 bundleId;
+        uint256[] assetIds;
     }
 
-    Counters.Counter private _bundleId;
-    TranscaBundle[] private bundles;
+    Counters.Counter public bundleId;
+    mapping(uint256 => TranscaBundle) public bundles;
 
-    mapping (uint256 => TranscaBundle) public transcaBundleAttribute;
+    event Issue(address indexed _userAddress, uint256 indexed _id, uint256[] _ids);
 
     function initialize() public initializer {
-        __ERC721_init("Transca Bundle NFTs", "TBN");
+        __ERC721_init("Transca Bundle NFTs", "TSB");
+
+        __AccessControl_init();
+        __Pausable_init();
         __ERC721Enumerable_init();
-      
-        __ERC721Burnable_init();
         __ERC721URIStorage_init();
+        __ERC721Burnable_init();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+
+        _pause();
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
-        returns (string memory)
-    {
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
         return super.tokenURI(tokenId);
     }
 
-    function setAddress(address _address) public {
-        assetContract = TranscaAssetNFT(_address);            
+    function setAsset(address _assetNftAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        assetNft = TranscaAssetNFT(_assetNftAddress);
     }
 
-    event Issue(
-        address indexed _userAddress,
-        uint256 indexed _id,
-        uint256[] _ids
-    );
-
-    function setBundle(address _userAddress, uint256 _id, uint256[] memory _ids) public {
-        TranscaBundle memory attribute = TranscaBundle({
-            _bundleId: _id,
-            _assetIds: _ids
-        });
-        transcaBundleAttribute[_id] = attribute;
-
-        emit Issue(
-            _userAddress,
-            _id,
-            _ids
-        );
-    } 
-
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes memory
-    ) public virtual override returns (bytes4) {
+    function onERC721Received(address, address, uint256, bytes memory) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
-    }    
+    }
 
     function getAssetAttribute(uint256 _id) public view returns (ITransca.AssetR memory) {
-        ITransca.AssetR memory att = assetContract.getAssetDetail(_id);
+        ITransca.AssetR memory att = assetNft.getAssetDetail(_id);
         return att;
     }
 
     function deposit(uint256[] memory _nftIds) public returns (uint256[] memory) {
-        // bytes32 message = keccak256(
-        //     abi.encodePacked(_msgSender(), _nftIds)
-        // );
-        // require(recoverSigner(prefixed(message), signature) == msg.sender, "Auth signature not match");
-        
         uint256[] memory ids = new uint256[](_nftIds.length);
 
         for (uint256 index = 0; index < _nftIds.length; index++) {
-            assetContract.safeTransferFrom(msg.sender, address(this), _nftIds[index]);
-            ids[index] = assetContract.getAssetDetailNonOracle(_nftIds[index])._assetId;
+            assetNft.safeTransferFrom(msg.sender, address(this), _nftIds[index]);
+            ids[index] = assetNft.getAssetDetailNonOracle(_nftIds[index]).assetId;
         }
-        safeMint(msg.sender,ids);
+
+        safeMint(msg.sender, ids);
+
         return ids;
-        // [TO-DO] after deposit mint bundle - widthdraw - burn bundle
+    }
+
+    function getValue(uint256 _bundleId) public view returns (int256) {
+        TranscaBundle memory _bundle = bundles[_bundleId];
+
+        int256 total = 0;
+
+        for (uint i = 0; i < _bundle.assetIds.length; i++) {
+            ITransca.AssetR memory att = assetNft.getAssetDetail(_bundle.assetIds[i]);
+            total += att.oraklPrice;
+        }
+
+        return total;
     }
 
     function safeMint(address _to, uint256[] memory _ids) private returns (uint256) {
-        uint256 bundleId = _bundleId.current();
-        _bundleId.increment();
-        bundles.push(TranscaBundle({
-            _bundleId: bundleId,
-            _assetIds: _ids
-        }));
-        setBundle(msg.sender,bundleId, _ids);
-        _safeMint(_to, bundleId);
-        _setTokenURI(bundleId, "https://ipfs.io/ipfs/QmQw37CrbijdhhX3ZfRYFU9nWqLbHUUwjpr6fZtuf9mKDv");
-        return bundleId;
+        uint256 _bundleId = bundleId.current();
+
+        TranscaBundle memory bundle = TranscaBundle({bundleId: _bundleId, assetIds: _ids});
+
+        _safeMint(_to, _bundleId);
+        _setTokenURI(_bundleId, "https://ipfs.io/ipfs/QmQw37CrbijdhhX3ZfRYFU9nWqLbHUUwjpr6fZtuf9mKDv");
+
+        bundles[_bundleId] = bundle;
+
+        emit Issue(_to, _bundleId, _ids);
+
+        bundleId.increment();
+
+        return _bundleId;
     }
 
-    function withdraw(uint256 _in_bundle_id) public returns (uint256[] memory){
-        address owner = ERC721Upgradeable.ownerOf(_in_bundle_id);
-        require(owner == msg.sender,"Not owner");
-        TranscaBundle memory bundle = bundles[_in_bundle_id];
-        uint256[] memory ids = new uint256[](bundle._assetIds.length);
-        for (uint256 index = 0; index < bundle._assetIds.length; index++) {
-            assetContract.safeTransferFrom(address(this), msg.sender,  bundle._assetIds[index]);
-            ids[index] = bundle._assetIds[index];
+    function withdraw(uint256 _bundleId) public returns (uint256[] memory) {
+        address owner = ERC721Upgradeable.ownerOf(_bundleId);
+        require(owner == msg.sender, "Not owner");
+
+        TranscaBundle memory bundle = bundles[_bundleId];
+        uint256[] memory ids = new uint256[](bundle.assetIds.length);
+
+        for (uint256 index = 0; index < bundle.assetIds.length; index++) {
+            assetNft.safeTransferFrom(address(this), msg.sender, bundle.assetIds[index]);
+            ids[index] = bundle.assetIds[index];
         }
-        _burn(_in_bundle_id);
-        delete transcaBundleAttribute[_in_bundle_id];
-        delete bundles[_in_bundle_id];
+
+        _burn(_bundleId);
+
+        delete bundles[_bundleId];
         return ids;
     }
 
-    function getBundle(uint256 _in_bundle_id) public view returns (TranscaBundle memory) {
-        TranscaBundle memory bundle = bundles[_in_bundle_id];
+    function getBundle(uint256 _bundleId) public view returns (TranscaBundle memory) {
+        TranscaBundle memory bundle = bundles[_bundleId];
         return bundle;
     }
-    
-    function getAllBunelByOwner(address _in_address) public view returns (TranscaBundle[] memory){
-        uint256 tokenIds = balanceOf(_in_address);
+
+    function getAllBundleByOwner(address _userAddress) public view returns (TranscaBundle[] memory) {
+        uint256 tokenIds = balanceOf(_userAddress);
         TranscaBundle[] memory result = new TranscaBundle[](tokenIds);
+
         require(tokenIds > 0, "NFTs count equal zero!");
-        for(uint i=0; i < tokenIds; i++){
-            uint256 id = tokenOfOwnerByIndex(_in_address,i);
+
+        for (uint i = 0; i < tokenIds; i++) {
+            uint256 id = tokenOfOwnerByIndex(_userAddress, i);
             result[i] = bundles[id];
         }
         return result;
     }
 
-    function getOwner(uint256 _in_bundle_id) public view returns (address){
-       address owner = ownerOf(_in_bundle_id);
-       return owner; 
-    }
-
-    function _burn(uint256 _in_tokenId) internal override(ERC721URIStorageUpgradeable, ERC721Upgradeable){
-        super._burn(_in_tokenId);
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable)  {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
-    }
-
-     function recoverSigner(bytes32 message, bytes memory sig) internal pure returns (address) {
+    function recoverSigner(bytes32 message, bytes memory sig) internal pure returns (address) {
         (uint8 v, bytes32 r, bytes32 s) = splitSignature(sig);
 
         return ecrecover(message, v, r, s);
     }
 
-    function splitSignature(bytes memory sig)
-        internal
-        pure
-        returns (
-            uint8 v,
-            bytes32 r,
-            bytes32 s
-        )
-    {
+    function splitSignature(bytes memory sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
         require(sig.length == 65);
 
         assembly {
@@ -193,7 +187,17 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
         return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC721Upgradeable) returns (bool) {
+    function _burn(uint256 _in_tokenId) internal override(ERC721URIStorageUpgradeable, ERC721Upgradeable) {
+        super._burn(_in_tokenId);
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override(AccessControlUpgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC721Upgradeable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

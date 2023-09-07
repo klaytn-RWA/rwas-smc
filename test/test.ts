@@ -44,6 +44,8 @@ describe("Transca Vault assests", function () {
     console.log("7s200:borrow:contract", transcaBorrowContract.address);
   };
 
+  const attach = async () => {};
+
   const unpause = async () => {
     const u1 = await transcaAssetNFTContract.connect(owner).unpause();
     const u1wait = await u1.wait();
@@ -57,18 +59,25 @@ describe("Transca Vault assests", function () {
   describe("Mint", function () {
     // NFT attribute
     const now = new Date().getTime();
+
     const expire = now + 1_000;
     const weight = ethers.utils.parseUnits("1.5", "ether");
+
     const expireTime = ethers.BigNumber.from(expire);
+
     const assetTypeGOLD = ethers.BigNumber.from(0);
     const assetTypeDIAMOND = ethers.BigNumber.from(1);
     const assetTypeOTHER = ethers.BigNumber.from(2);
+
     const indentifierCode = "GOLDCODE1";
+
     const tokenURI = "https://ipfs.io/ipfs/QmRkk4SkhzxKs7s9EkxP9zU9VpFfEMWRT3aYbRtdiE8oUY";
     const tokenURIDiamond = "https://ipfs.io/ipfs/QmRYkXnQSvyKVJ9iDJ27a8KfwKny88mpZ6WyNeHQJC6qje";
     const tokenURIOther = "https://ipfs.io/ipfs/QmTM6pgQRbdJ7kfk1UYQDJE6g95Z2pc7g1Sb5rE1GY4JdN";
+
     const userDefinePrice = ethers.BigNumber.from(0);
     const userDefinePrice1 = ethers.BigNumber.from(1000);
+
     const appraisalPrice = ethers.BigNumber.from(0);
     const appraisalPrice1 = ethers.BigNumber.from(3500);
 
