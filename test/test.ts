@@ -114,16 +114,13 @@ describe("Transca Vault assests", function () {
         .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice);
       await nft2.wait();
       console.log("7s2003");
-      // const nft3 = await transcaAssetNFTContract
-      //   .connect(owner)
-      //   .safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
-      // await nft3.wait();
+      const nft3 = await transcaAssetNFTContract
+        .connect(owner)
+        .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice);
+      await nft3.wait();
 
       // [Mint bundle]
-      // const hash = abi.soliditySHA3(["address", "uint256[]"], [new BN(owner.address.slice(2), 16), [new BN(0, 10), new BN(1, 10)]]);
-      // const signature = await owner.signMessage(hash);
-
-      // const mintBundle = await transcaBundleNFTContract.deposit([0, 1], signature);
+      // const mintBundle = await transcaBundleNFTContract.deposit([0, 1]);
       // console.log("7s200:bundle", mintBundle);
       // const mintwait = await mintBundle.wait();
       // console.log("7s200:mintwait", mintwait);
@@ -157,8 +154,8 @@ describe("Transca Vault assests", function () {
       // [Ignore]
       // const bundle = await transcaBundleNFTContract.getAssetAttribute(0);
       // console.log("7s200:bundle", bundle);
-      const asset = await transcaAssetNFTContract.getAllAssetByUser(owner.address);
-      console.log("7s200:asset", asset);
+      // const asset = await transcaAssetNFTContract.getAllAssetByUser(owner.address);
+      // console.log("7s200:asset", asset);
 
       // const nfts = await transcaAssetNFTContract.getAllAssetByUser(owner);
       // const nfts2 = await transcaAssetNFTContract.getAllAssetByUser(addr1);

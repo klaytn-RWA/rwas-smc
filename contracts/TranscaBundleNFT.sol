@@ -105,11 +105,11 @@ contract TranscaBundleNFT is Initializable, IERC721ReceiverUpgradeable, ERC721Up
 
     function safeMint(address _to, uint256[] memory _ids) private returns (uint256) {
         uint256 bundleId = _bundleId.current();
+        _bundleId.increment();
         bundles.push(TranscaBundle({
             _bundleId: bundleId,
             _assetIds: _ids
         }));
-        
         setBundle(msg.sender,bundleId, _ids);
         _safeMint(_to, bundleId);
         _setTokenURI(bundleId, "https://ipfs.io/ipfs/QmQw37CrbijdhhX3ZfRYFU9nWqLbHUUwjpr6fZtuf9mKDv");
