@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 contract TranscaIntermediation is Initializable, AccessControlUpgradeable, PausableUpgradeable, IERC721ReceiverUpgradeable {
     using Counters for Counters.Counter;
@@ -180,15 +181,22 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
             TranscaAssetNFT _nftContract = TranscaAssetNFT(_nftAddress);
             ITransca.AssetR memory nft = _nftContract.getAssetDetail(_nftId);
 
-            require(token.transferFrom(address(this), msg.sender, uint256(nft.oraklPrice)), "Transfering the offered amount to the borrower failed");
+            amount = SafeCast.toUint256(nft.oraklPrice);
+
+            require(token.approve(msg.sender, amount));
+            require(token.transfer(msg.sender, amount), "Transfering the offered amount to the borrower failed");
         }
 
-        if (_nftAddress == address(assetNft)) {
+        if (_nftAddress == address(bundleNft)) {
             lender = address(this);
             borrowedAt = block.timestamp;
 
             TranscaBundleNFT _nftContract = TranscaBundleNFT(_nftAddress);
-            require(token.transferFrom(address(this), msg.sender, uint256(_nftContract.getValue(_nftId))), "Transfering the offered amount to the borrower failed");
+
+            amount = SafeCast.toUint256(_nftContract.getValue(_nftId));
+
+            require(token.approve(msg.sender, amount));
+            require(token.transfer(msg.sender, amount), "Transfering the offered amount to the borrower failed");
         }
 
         uint256 _borrowReqId = borrowReqId.current();
@@ -216,6 +224,31 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
 
         borrows[_borrowReqId] = _borrow;
 
+        if (_nftAddress == address(assetNft) || _nftAddress == address(bundleNft)) {
+            uint256 _lendOfferReqId = lendOfferReqId.current();
+
+            uint256 time = block.timestamp;
+
+            LendOfferReq memory _offer = LendOfferReq({
+                lendReqId: _lendOfferReqId,
+                borrowReqId: _borrow.borrowReqId,
+                borrowLendReqId: _borrow.lendOfferReqId,
+                creator: msg.sender,
+                createdAt: time,
+                amount: amount,
+                cancelled: false
+            });
+
+            lends[_lendOfferReqId] = _offer;
+            lendOffersByBorrow[_lendOfferReqId][_borrow.lendOfferReqId] = _offer;
+
+            _borrow.lendOfferReqId++;
+
+            borrows[_borrow.borrowReqId] = _borrow;
+
+            lendOfferReqId.increment();
+        }
+
         nftContract.safeTransferFrom(msg.sender, address(this), _nftId);
 
         borrowReqId.increment();
@@ -223,6 +256,31 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         // TO-DO: event
 
         return _nftId;
+    }
+
+    function showQuickBorrowAmount(uint256 _nftId, address _nftAddress) public view returns (uint256) {
+        require(this.isERC721Contract(_nftAddress), "NFT Only");
+
+        address owner = IERC721(_nftAddress).ownerOf(_nftId);
+
+        require(msg.sender == owner, "Only the owner can create borrow request");
+
+        uint256 amount = 0;
+
+        if (_nftAddress == address(assetNft)) {
+            TranscaAssetNFT _nftContract = TranscaAssetNFT(_nftAddress);
+            ITransca.AssetR memory nft = _nftContract.getAssetDetail(_nftId);
+
+            amount = SafeCast.toUint256(nft.oraklPrice);
+        }
+
+        if (_nftAddress == address(bundleNft)) {
+            TranscaBundleNFT _nftContract = TranscaBundleNFT(_nftAddress);
+
+            amount = SafeCast.toUint256(_nftContract.getValue(_nftId));
+        }
+
+        return amount;
     }
 
     function getAllBorrows() public view returns (BorrowReq[] memory) {
@@ -380,21 +438,16 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         BorrowReq memory _borrow = this.getBorrowReqById(_borrowId);
 
         require(msg.sender == _borrow.creator, "Only the owner can create borrow request");
+        require(!this.isBorrowed(_borrowId), "Unable to cancel");
 
         IERC721 nftContract = IERC721(_borrow.nftAddress);
 
-        if (!this.isBorrowed(_borrowId)) {
-            _borrow.cancelled = true;
-            borrows[_borrow.borrowReqId] = _borrow;
+        _borrow.cancelled = true;
+        borrows[_borrow.borrowReqId] = _borrow;
 
-            nftContract.safeTransferFrom(address(this), msg.sender, _borrow.nftId);
+        nftContract.safeTransferFrom(address(this), msg.sender, _borrow.nftId);
 
-            return true;
-        }
-
-        // TO-DO: event
-
-        return false;
+        return true;
     }
 
     function acceptOffer(uint256 _borrowId) public whenNotPaused returns (bool) {

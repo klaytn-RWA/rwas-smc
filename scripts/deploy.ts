@@ -4,6 +4,8 @@ import "@openzeppelin/hardhat-upgrades";
 import { Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 
+const aggregatorProxyXAU = "0x555E072996d0335Ec63B448ddD507CB99379C723";
+
 async function main() {
   let transcaAssetNFT: Contract;
   let transcaBundleNFT: Contract;
@@ -32,10 +34,10 @@ async function main() {
 
     if (showConsole) {
       console.table({
-        usdtSimulator: usdtSimulator.address,
         transcaAssetNFT: transcaAssetNFT.address,
         transcaBundleNFT: transcaBundleNFT.address,
         transcaIntermediation: transcaIntermediation.address,
+        usdtSimulator: usdtSimulator.address,
       });
     }
   };
@@ -53,9 +55,21 @@ async function main() {
     await (await transcaIntermediation.connect(owner).unpause()).wait();
   };
 
+  const setAggregator = async () => {
+    const tx = await transcaAssetNFT.connect(owner).setAggregator(aggregatorProxyXAU);
+    await tx.wait();
+  };
+
+  const transfer = async () => {
+    const tx = await usdtSimulator.connect(owner).transfer(transcaIntermediation.address, ethers.utils.parseUnits("100000000", 18));
+    await tx.wait();
+  };
+
   await deploy();
   await setSpec();
   await unpauseAll();
+  await setAggregator();
+  await transfer();
 }
 
 main()

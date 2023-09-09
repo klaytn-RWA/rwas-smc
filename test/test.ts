@@ -148,7 +148,7 @@ describe("Transca Vault assests", function () {
       expect(await usdtSimulator.balanceOf(addr2.address)).to.eq(ethers.utils.parseUnits("5000000", 18));
 
       await expect(usdtSimulator.connect(addr2).approve(transcaIntermediation.address, ethers.utils.parseUnits("1", 0))).to.not.reverted;
-      await expect(transcaIntermediation.connect(addr2).createLendOffer(0, 5)).to.revertedWith("ERC20:EA");
+      await expect(transcaIntermediation.connect(addr2).createLendOffer(0, 5)).to.revertedWith("ERC20: insufficient allowance");
 
       await expect(usdtSimulator.connect(addr2).approve(transcaIntermediation.address, ethers.utils.parseUnits("5", 0))).to.not.reverted;
       await expect(transcaIntermediation.connect(addr2).createLendOffer(0, 5)).to.not.reverted;

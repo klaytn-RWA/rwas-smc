@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import "@openzeppelin/hardhat-upgrades";
 import { ethers } from "hardhat";
 
-const weight = ethers.utils.parseUnits("3", 10);
+const weight = ethers.utils.parseUnits("1", 18);
 
 const now = new Date().getTime();
 const expire = now + 1_000_000;
@@ -44,12 +44,11 @@ async function main() {
 └───────────────────────┴──────────────────────────────────────────────┘
     */
 
-    const transcaAssetNFT = TranscaAssetNFT.attach("0x3419c63ebf27752ae3D6175133ed63b1e042D489");
+    const transcaIntermediation = TranscaIntermediation.attach("0x2714577F0F5468187084023a91a5d936Ae1A9BA2");
+    const usdtSimulator = USDTSimulator.attach("0xb46e565D67E2eB90257380009C78883fC944b71e");
 
-    const tx = await transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
+    const tx = await usdtSimulator.connect(owner).transfer(transcaIntermediation.address, ethers.utils.parseUnits("100000000", 18));
     await tx.wait();
-
-    console.log(tx.hash);
   };
 
   await mint();
