@@ -74,7 +74,9 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
 
     // event CreateLendOfferForBorrowReq(uint256 lendId, bytes32 borrowId, uint256 lendAmount, uint256 interateRateAmount, uint256 duration, address lender);
 
-    function initialize() public initializer {}
+    function initialize() public initializer {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
 
     function setAsset(address _assetNftAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
         assetNft = TranscaAssetNFT(_assetNftAddress);
@@ -289,7 +291,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
 
         if (_amount == borrowReq.amount) {
             // borrower accepted
-            require(token.transferFrom(msg.sender, address(this), _amount), "Transfering the offered amount to the smc failed");
+            require(token.transferFrom(msg.sender, borrowReq.creator, _amount), "Transfering the offered amount to the smc failed");
             borrowReq.lender = msg.sender;
             borrowReq.borrowedAt = time;
         }
@@ -400,7 +402,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         require(_borrow.borrowedAt > 0, "Only borrowed");
         require(_borrow.returnedAt == 0, "Only not return yet");
         require(!this.isOverDuration(_borrowId), "Over duration");
-        require(_borrow.lenderWithdrawedAt > 0, "Only not done yet");
+        // require(_borrow.lenderWithdrawedAt > 0, "Only not done yet");
         require(token.transferFrom(msg.sender, _borrow.lender, _borrow.amount), "Transfering the return amount to the lender failed");
 
         _borrow.returned = true;

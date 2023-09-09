@@ -9,8 +9,8 @@ describe("Transca Vault assests", function () {
   // Contracts:
   let transcaAssetNFTContract: Contract;
   let transcaBundleNFTContract: Contract;
-  let transcaBorrowContract: Contract;
   let transcaToken: Contract;
+  let transcaIntermediationContract: Contract;
 
   // Address:
   let owner: SignerWithAddress, addr1: SignerWithAddress, addr2: SignerWithAddress;
@@ -34,21 +34,32 @@ describe("Transca Vault assests", function () {
     const transcaBundleNFTContractFactory = await ethers.getContractFactory("TranscaBundleNFT");
     const deployTranscaBundleNFT = await upgrades.deployProxy(transcaBundleNFTContractFactory);
     transcaBundleNFTContract = await deployTranscaBundleNFT.deployed();
-    const setcontract = await transcaBundleNFTContract.setAddress(transcaAssetNFTContract.address);
+    const setcontract = await transcaBundleNFTContract.setAsset(transcaAssetNFTContract.address);
     await setcontract.wait();
     console.log("7s200:bundle:contract", transcaBundleNFTContract.address);
+    const tx = await transcaAssetNFTContract.setApprovalForAll(transcaBundleNFTContract.address, true);
+    await tx.wait();
 
-    const transcaBorrowContractFactory = await ethers.getContractFactory("TranscaBorrow");
-    const deployTranscaBorrow = await upgrades.deployProxy(transcaBorrowContractFactory, [transcaToken.address, transcaAssetNFTContract.address, transcaBundleNFTContract.address]);
-    transcaBorrowContract = await deployTranscaBorrow.deployed();
-    console.log("7s200:borrow:contract", transcaBorrowContract.address);
+    const transcaIntermediationContractFactory = await ethers.getContractFactory("TranscaIntermediation");
+    const deployTranscaBorrow = await upgrades.deployProxy(transcaIntermediationContractFactory);
+    transcaIntermediationContract = await deployTranscaBorrow.deployed();
+    const tx1 = await transcaAssetNFTContract.setApprovalForAll(transcaIntermediationContract.address, true);
+    await tx1.wait();
+    const tx2 = await transcaBundleNFTContract.setApprovalForAll(transcaIntermediationContract.address, true);
+    await tx2.wait();
+
+    const setAsset = await transcaIntermediationContract.setAsset(transcaAssetNFTContract.address);
+    await setAsset.wait();
+    const setBundle = await transcaIntermediationContract.setBundle(transcaBundleNFTContract.address);
+    await setBundle.wait();
+    const setToken = await transcaIntermediationContract.setToken(transcaToken.address);
+    await setToken.wait();
+    console.log("7s200:borrow:contract", transcaIntermediationContract.address);
   };
-
-  const attach = async () => {};
 
   const unpause = async () => {
     const u1 = await transcaAssetNFTContract.connect(owner).unpause();
-    const u1wait = await u1.wait();
+    await u1.wait();
   };
 
   const pause = async () => {
@@ -61,7 +72,7 @@ describe("Transca Vault assests", function () {
     const now = new Date().getTime();
 
     const expire = now + 1_000;
-    const weight = ethers.utils.parseUnits("1.5", "ether");
+    const weight = ethers.utils.parseUnits("1", 10);
 
     const expireTime = ethers.BigNumber.from(expire);
 
@@ -117,53 +128,54 @@ describe("Transca Vault assests", function () {
       console.log("7s200:owner-of-3:before", ownerOf3);
 
       // [Borrow - Request]
-      const nftId = 0;
-      const _inLoanAmount = ethers.utils.parseUnits("50", 18);
-      const _inInterateRateAmount = ethers.utils.parseUnits("10", 18);
-      const _inDuration = 100_000;
+      // const nftId = 0;
+      // const _inLoanAmount = ethers.utils.parseUnits("50", 18);
+      // const _inInterateRateAmount = ethers.utils.parseUnits("10", 18);
+      // const _inDuration = 100_000;
 
-      const borrowRequest = await transcaBorrowContract.connect(owner).createBorrowAsset(nftId, false, _inLoanAmount, _inInterateRateAmount, _inDuration);
-      await borrowRequest.wait();
-      const ownerOf0AferCreateBorrowReq = await transcaAssetNFTContract.ownerOf(0);
-      console.log("7s200:owner-of-0:before", ownerOf0AferCreateBorrowReq);
+      // const borrowRequest = await transcaBorrowContract.connect(owner).createBorrowAsset(nftId, false, _inLoanAmount, _inInterateRateAmount, _inDuration);
+      // await borrowRequest.wait();
+      // const ownerOf0AferCreateBorrowReq = await transcaAssetNFTContract.ownerOf(0);
+      // console.log("7s200:owner-of-0:before", ownerOf0AferCreateBorrowReq);
 
-      const allBorrowReq = await transcaBorrowContract.getAllBorrowsRequest();
-      console.log("7s200:allBorrow", allBorrowReq);
+      // const allBorrowReq = await transcaBorrowContract.getAllBorrowsRequest();
+      // console.log("7s200:allBorrow", allBorrowReq);
 
       // [Balance-of]
-      await transcaToken.connect(owner).transfer(addr1.address, ethers.utils.parseUnits("500000", 18));
-      await transcaToken.connect(owner).transfer(addr2.address, ethers.utils.parseUnits("100000", 18));
+      await transcaToken.connect(owner).transfer(transcaIntermediationContract.address, ethers.utils.parseUnits("50000000", 18));
+      await transcaToken.connect(owner).transfer(addr1.address, ethers.utils.parseUnits("5000000", 18));
+      await transcaToken.connect(owner).transfer(addr2.address, ethers.utils.parseUnits("1000000", 18));
 
-      await transcaToken.connect(owner).approve(transcaBorrowContract.address, ethers.utils.parseUnits("10000", 18), { from: owner.address });
-      await transcaToken.connect(addr1).approve(transcaBorrowContract.address, ethers.utils.parseUnits("10000", 18), { from: addr1.address });
-      await transcaToken.connect(addr2).approve(transcaBorrowContract.address, ethers.utils.parseUnits("10000", 18), { from: addr2.address });
+      await transcaToken.connect(owner).approve(transcaIntermediationContract.address, ethers.utils.parseUnits("1000000", 18), { from: owner.address });
+      await transcaToken.connect(addr1).approve(transcaIntermediationContract.address, ethers.utils.parseUnits("1000000", 18), { from: addr1.address });
+      await transcaToken.connect(addr2).approve(transcaIntermediationContract.address, ethers.utils.parseUnits("1000000", 18), { from: addr2.address });
 
       // [User 1,2 create lend offer req]
-      const user1BalanceBeforeCreateReq = await transcaToken.balanceOf(addr1.address);
-      console.log("7s200:user1BalanceBeforeCreateReq:", user1BalanceBeforeCreateReq);
-      const user2BalanceBeforeCreateReq = await transcaToken.balanceOf(addr2.address);
-      console.log("7s200:user2BalanceBeforeCreateReq:", user2BalanceBeforeCreateReq);
-      const smcBalanceBeforeCreatereq = await transcaToken.balanceOf(transcaBorrowContract.address);
-      console.log("7s200:balance:1", smcBalanceBeforeCreatereq);
+      // const user1BalanceBeforeCreateReq = await transcaToken.balanceOf(addr1.address);
+      // console.log("7s200:user1BalanceBeforeCreateReq:", user1BalanceBeforeCreateReq);
+      // const user2BalanceBeforeCreateReq = await transcaToken.balanceOf(addr2.address);
+      // console.log("7s200:user2BalanceBeforeCreateReq:", user2BalanceBeforeCreateReq);
+      // const smcBalanceBeforeCreatereq = await transcaToken.balanceOf(transcaBorrowContract.address);
+      // console.log("7s200:balance:1", smcBalanceBeforeCreatereq);
 
-      const user1LendReq = await transcaBorrowContract
-        .connect(addr1)
-        .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("45", 18), ethers.utils.parseUnits("5", 18), _inDuration);
-      await user1LendReq.wait();
-      const user2LendReq = await transcaBorrowContract
-        .connect(addr2)
-        .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("30", 18), ethers.utils.parseUnits("4", 18), _inDuration);
-      await user2LendReq.wait();
+      // const user1LendReq = await transcaBorrowContract
+      //   .connect(addr1)
+      //   .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("45", 18), ethers.utils.parseUnits("5", 18), _inDuration);
+      // await user1LendReq.wait();
+      // const user2LendReq = await transcaBorrowContract
+      //   .connect(addr2)
+      //   .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("30", 18), ethers.utils.parseUnits("4", 18), _inDuration);
+      // await user2LendReq.wait();
 
-      const allLenderByBorrowReq = await transcaBorrowContract.getAllLendReqByNFTId(allBorrowReq[0]._borrowReqId);
-      console.log("7s200:allLenderByBorrowReq", allLenderByBorrowReq);
+      // const allLenderByBorrowReq = await transcaBorrowContract.getAllLendReqByNFTId(allBorrowReq[0]._borrowReqId);
+      // console.log("7s200:allLenderByBorrowReq", allLenderByBorrowReq);
 
-      const user1BalanceAfterCreateReq = await transcaToken.balanceOf(addr1.address);
-      console.log("7s200:user1BalanceAfterCreateReq", user1BalanceAfterCreateReq);
-      const user2BalanceAfterCreateReq = await transcaToken.balanceOf(addr2.address);
-      console.log("7s200:user1BalanceAfterCreateReq", user2BalanceAfterCreateReq);
-      const balanceOfSMCAfterCreateReq = await transcaToken.balanceOf(transcaBorrowContract.address);
-      console.log("7s200:balanceOfSMCAfterCreateReq", balanceOfSMCAfterCreateReq);
+      // const user1BalanceAfterCreateReq = await transcaToken.balanceOf(addr1.address);
+      // console.log("7s200:user1BalanceAfterCreateReq", user1BalanceAfterCreateReq);
+      // const user2BalanceAfterCreateReq = await transcaToken.balanceOf(addr2.address);
+      // console.log("7s200:user1BalanceAfterCreateReq", user2BalanceAfterCreateReq);
+      // const balanceOfSMCAfterCreateReq = await transcaToken.balanceOf(transcaBorrowContract.address);
+      // console.log("7s200:balanceOfSMCAfterCreateReq", balanceOfSMCAfterCreateReq);
 
       // [Mint bundle]
       // const mintBundle = await transcaBundleNFTContract.deposit([0, 1]);

@@ -66,6 +66,7 @@ contract TranscaBundleNFT is
         _unpause();
     }
 
+
     function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
         return super.tokenURI(tokenId);
     }
