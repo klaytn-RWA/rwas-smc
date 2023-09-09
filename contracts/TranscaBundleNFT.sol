@@ -66,7 +66,6 @@ contract TranscaBundleNFT is
         _unpause();
     }
 
-
     function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
         return super.tokenURI(tokenId);
     }
@@ -110,7 +109,7 @@ contract TranscaBundleNFT is
         return total;
     }
 
-    function safeMint(address _to, uint256[] memory _ids) private returns (uint256) {
+    function safeMint(address _to, uint256[] memory _ids) private whenNotPaused returns (uint256) {
         uint256 _bundleId = bundleId.current();
 
         TranscaBundle memory bundle = TranscaBundle({bundleId: _bundleId, assetIds: _ids});
@@ -127,7 +126,7 @@ contract TranscaBundleNFT is
         return _bundleId;
     }
 
-    function withdraw(uint256 _bundleId) public returns (uint256[] memory) {
+    function withdraw(uint256 _bundleId) public whenNotPaused returns (uint256[] memory) {
         address owner = ERC721Upgradeable.ownerOf(_bundleId);
         require(owner == msg.sender, "Not owner");
 

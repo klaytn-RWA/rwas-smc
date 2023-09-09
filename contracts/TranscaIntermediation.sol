@@ -70,12 +70,24 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
     mapping(uint256 => LendOfferReq) public lends;
     mapping(uint256 => mapping(uint256 => LendOfferReq)) public lendOffersByBorrow;
 
-    event CreateBorrowAsset(uint256 id, uint256 indexed nftId, bool isBundle, address indexed creator, uint256 createAt, uint256 amount, uint256 minAmount, uint256 duration);
-
+    // event CreateBorrowAsset(uint256 id, uint256 indexed nftId, bool isBundle, address indexed creator, uint256 createAt, uint256 amount, uint256 minAmount, uint256 duration);
     // event CreateLendOfferForBorrowReq(uint256 lendId, bytes32 borrowId, uint256 lendAmount, uint256 interateRateAmount, uint256 duration, address lender);
+
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     function initialize() public initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+
+        _pause();
+    }
+
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
     }
 
     function setAsset(address _assetNftAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -103,7 +115,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         }
     }
 
-    function createBorrow(uint256 _nftId, address _nftAddress, uint256 _amount, uint256 _minAmount, uint256 _duration) public returns (uint256) {
+    function createBorrow(uint256 _nftId, address _nftAddress, uint256 _amount, uint256 _minAmount, uint256 _duration) public whenNotPaused returns (uint256) {
         // action
         require(this.isERC721Contract(_nftAddress), "NFT Only");
         IERC721 nftContract = IERC721(_nftAddress);
@@ -112,7 +124,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         require(msg.sender == owner, "Only the owner can create borrow request");
         require(_amount > 0, "Loan amount should be bigger than 0");
         require(_minAmount > 0, "Min amount should be bigger than 0");
-        require(_minAmount < _amount, "Min amount should be smaller than loan amount");
+        require(_minAmount <= _amount, "Min amount should be smaller than loan amount");
         require(_duration > 0, "Duration loan should be bigger than 0min(s)"); // minutes
 
         uint256 _borrowReqId = borrowReqId.current();
@@ -149,7 +161,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         return _nftId;
     }
 
-    function createQuickBorrow(uint256 _nftId, address _nftAddress, uint256 _duration) public returns (uint256) {
+    function createQuickBorrow(uint256 _nftId, address _nftAddress, uint256 _duration) public whenNotPaused returns (uint256) {
         // action
         require(this.isERC721Contract(_nftAddress), "NFT Only");
         IERC721 nftContract = IERC721(_nftAddress);
@@ -259,7 +271,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         return _borrows;
     }
 
-    function createLendOffer(uint256 _borrowId, uint256 _amount) public {
+    function createLendOffer(uint256 _borrowId, uint256 _amount) public whenNotPaused {
         // action
         BorrowReq memory borrowReq = borrows[_borrowId];
         address borrower = borrowReq.creator;
@@ -363,7 +375,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         return _borrow.borrowedAt + _borrow.duration * 60;
     }
 
-    function cancelBorrow(uint256 _borrowId) public returns (bool) {
+    function cancelBorrow(uint256 _borrowId) public whenNotPaused returns (bool) {
         // action
         BorrowReq memory _borrow = this.getBorrowReqById(_borrowId);
 
@@ -385,15 +397,15 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         return false;
     }
 
-    function acceptOffer(uint256 _borrowId) public view returns (bool) {
+    function acceptOffer(uint256 _borrowId) public whenNotPaused returns (bool) {
         // action
     }
 
-    function cancelOffer(uint256 _borrowId) public view returns (bool) {
+    function cancelOffer(uint256 _borrowId) public whenNotPaused returns (bool) {
         // action
     }
 
-    function returnTheMoney(uint256 _borrowId) public returns (bool) {
+    function returnTheMoney(uint256 _borrowId) public whenNotPaused returns (bool) {
         // action
         BorrowReq memory _borrow = this.getBorrowReqById(_borrowId);
 
@@ -421,7 +433,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         return true;
     }
 
-    function lenderClaim(uint256 _borrowId) public returns (bool) {
+    function lenderClaim(uint256 _borrowId) public whenNotPaused returns (bool) {
         // action
         BorrowReq memory _borrow = this.getBorrowReqById(_borrowId);
 

@@ -1,8 +1,10 @@
 {
-  "name": "skyline-bridge-contracts",
+  "name": "rwas-contracts",
   "scripts": {
     "compile": "hardhat compile",
+    "test:baobab": "pnpm run compile && hardhat test --network baobab",
     "test": "pnpm run compile && hardhat test",
+    "run:baobab": "hardhat run --network baobab",
     "prepare": "husky install",
     "lint:prettier": "prettier {test,scripts,utils,sample}",
     "lint:fix": "prettier --write {test,scripts,utils,sample}",

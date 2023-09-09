@@ -5,216 +5,181 @@ import { expect } from "chai";
 import { Contract } from "ethers";
 import { ethers, upgrades } from "hardhat";
 
-describe("Transca Vault assests", function () {
-  // Contracts:
-  let transcaAssetNFTContract: Contract;
-  let transcaBundleNFTContract: Contract;
-  let transcaToken: Contract;
-  let transcaIntermediationContract: Contract;
+const aggregatorProxyXAU = "0x555E072996d0335Ec63B448ddD507CB99379C723";
 
-  // Address:
+const weight = ethers.utils.parseUnits("1", 18);
+
+const now = new Date().getTime();
+const expire = now + 1_000_000;
+const expireTime = ethers.BigNumber.from(expire);
+
+const assetTypeGOLD = ethers.BigNumber.from(0);
+const assetTypeDIAMOND = ethers.BigNumber.from(1);
+const assetTypeOTHER = ethers.BigNumber.from(2);
+
+const indentifierCode = "GOLDCODE1";
+
+const tokenURI = "https://ipfs.io/ipfs/QmRkk4SkhzxKs7s9EkxP9zU9VpFfEMWRT3aYbRtdiE8oUY";
+const tokenURIDiamond = "https://ipfs.io/ipfs/QmRYkXnQSvyKVJ9iDJ27a8KfwKny88mpZ6WyNeHQJC6qje";
+const tokenURIOther = "https://ipfs.io/ipfs/QmTM6pgQRbdJ7kfk1UYQDJE6g95Z2pc7g1Sb5rE1GY4JdN";
+
+const userDefinePrice = ethers.BigNumber.from(0);
+const userDefinePrice1 = ethers.BigNumber.from(1000);
+
+const appraisalPrice = ethers.BigNumber.from(0);
+const appraisalPrice1 = ethers.BigNumber.from(3500);
+
+describe("Transca Vault assests", function () {
+  let transcaAssetNFT: Contract;
+  let transcaBundleNFT: Contract;
+  let transcaIntermediation: Contract;
+  let usdtSimulator: Contract;
+
   let owner: SignerWithAddress, addr1: SignerWithAddress, addr2: SignerWithAddress;
 
-  // Variable:
-  const aggregatorProxyXAU = "0x555E072996d0335Ec63B448ddD507CB99379C723";
-
-  const deploy = async () => {
+  const deploy = async (showConsole: boolean = true) => {
     [owner, addr1, addr2] = await ethers.getSigners();
 
-    // Deploy
-    const transcaTokenContractFactory = await ethers.getContractFactory("USDTSimulator");
-    transcaToken = await (await transcaTokenContractFactory.deploy("USDT", "USDT")).deployed();
-    console.log("7s200:token:contract", transcaToken.address);
+    const USDTSimulator = await ethers.getContractFactory("USDTSimulator");
+    usdtSimulator = await (await USDTSimulator.deploy("USDT", "USDT")).deployed();
 
-    const transcaAssetNFTContractFactory = await ethers.getContractFactory("TranscaAssetNFT");
-    const deployTranscaAssetNFT = await upgrades.deployProxy(transcaAssetNFTContractFactory);
-    transcaAssetNFTContract = await deployTranscaAssetNFT.deployed();
-    console.log("7s200:asset:contract", transcaAssetNFTContract.address);
+    const TranscaAssetNFT = await ethers.getContractFactory("TranscaAssetNFT");
+    const deployTranscaAssetNFT = await upgrades.deployProxy(TranscaAssetNFT);
+    transcaAssetNFT = await deployTranscaAssetNFT.deployed();
 
-    const transcaBundleNFTContractFactory = await ethers.getContractFactory("TranscaBundleNFT");
-    const deployTranscaBundleNFT = await upgrades.deployProxy(transcaBundleNFTContractFactory);
-    transcaBundleNFTContract = await deployTranscaBundleNFT.deployed();
-    const setcontract = await transcaBundleNFTContract.setAsset(transcaAssetNFTContract.address);
-    await setcontract.wait();
-    console.log("7s200:bundle:contract", transcaBundleNFTContract.address);
-    const tx = await transcaAssetNFTContract.setApprovalForAll(transcaBundleNFTContract.address, true);
-    await tx.wait();
+    const TranscaBundleNFT = await ethers.getContractFactory("TranscaBundleNFT");
+    const deployTranscaBundleNFT = await upgrades.deployProxy(TranscaBundleNFT);
+    transcaBundleNFT = await deployTranscaBundleNFT.deployed();
 
-    const transcaIntermediationContractFactory = await ethers.getContractFactory("TranscaIntermediation");
-    const deployTranscaBorrow = await upgrades.deployProxy(transcaIntermediationContractFactory);
-    transcaIntermediationContract = await deployTranscaBorrow.deployed();
-    const tx1 = await transcaAssetNFTContract.setApprovalForAll(transcaIntermediationContract.address, true);
-    await tx1.wait();
-    const tx2 = await transcaBundleNFTContract.setApprovalForAll(transcaIntermediationContract.address, true);
-    await tx2.wait();
+    const TranscaIntermediation = await ethers.getContractFactory("TranscaIntermediation");
+    const deployTranscaIntermediation = await upgrades.deployProxy(TranscaIntermediation);
+    transcaIntermediation = await deployTranscaIntermediation.deployed();
 
-    const setAsset = await transcaIntermediationContract.setAsset(transcaAssetNFTContract.address);
-    await setAsset.wait();
-    const setBundle = await transcaIntermediationContract.setBundle(transcaBundleNFTContract.address);
-    await setBundle.wait();
-    const setToken = await transcaIntermediationContract.setToken(transcaToken.address);
-    await setToken.wait();
-    console.log("7s200:borrow:contract", transcaIntermediationContract.address);
+    if (showConsole) {
+      console.table({
+        usdtSimulator: usdtSimulator.address,
+        transcaAssetNFT: transcaAssetNFT.address,
+        transcaBundleNFT: transcaBundleNFT.address,
+        transcaIntermediation: transcaIntermediation.address,
+      });
+    }
   };
 
-  const unpause = async () => {
-    const u1 = await transcaAssetNFTContract.connect(owner).unpause();
-    await u1.wait();
+  const setSpec = async () => {
+    await expect(transcaBundleNFT.connect(owner).setAsset(transcaAssetNFT.address)).to.not.reverted;
+    await expect(transcaIntermediation.connect(owner).setAsset(transcaAssetNFT.address)).to.not.reverted;
+    await expect(transcaIntermediation.connect(owner).setBundle(transcaBundleNFT.address)).to.not.reverted;
+    await expect(transcaIntermediation.connect(owner).setToken(usdtSimulator.address)).to.not.reverted;
   };
 
-  const pause = async () => {
-    await expect(transcaAssetNFTContract.connect(owner).pause()).to.not.reverted;
-    await expect(transcaAssetNFTContract.connect(addr1).pause()).to.be.reverted;
+  const unpauseAll = async () => {
+    await expect(transcaAssetNFT.connect(owner).unpause()).to.not.reverted;
+    await expect(transcaBundleNFT.connect(owner).unpause()).to.not.reverted;
+    await expect(transcaIntermediation.connect(owner).unpause()).to.not.reverted;
   };
 
-  describe("Mint", function () {
-    // NFT attribute
-    const now = new Date().getTime();
+  const pauseAll = async () => {
+    await expect(transcaAssetNFT.connect(owner).pause()).to.not.reverted;
+    await expect(transcaBundleNFT.connect(owner).pause()).to.not.reverted;
+    await expect(transcaIntermediation.connect(owner).pause()).to.not.reverted;
+  };
 
-    const expire = now + 1_000;
-    const weight = ethers.utils.parseUnits("1", 10);
+  const transferUsdtToUser = async () => {
+    await expect(usdtSimulator.connect(owner).transfer(addr2.address, ethers.utils.parseUnits("5000000", 18))).to.not.reverted;
+  };
 
-    const expireTime = ethers.BigNumber.from(expire);
+  const reset = async () => {
+    await ethers.provider.send("hardhat_reset", []);
+  };
 
-    const assetTypeGOLD = ethers.BigNumber.from(0);
-    const assetTypeDIAMOND = ethers.BigNumber.from(1);
-    const assetTypeOTHER = ethers.BigNumber.from(2);
+  const setAggregator = async () => {
+    await expect(transcaAssetNFT.connect(owner).setAggregator(aggregatorProxyXAU)).to.not.reverted;
+  };
 
-    const indentifierCode = "GOLDCODE1";
+  const mintManyNFTs = async () => {
+    await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice)).to.not
+      .reverted;
+    await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeDIAMOND, indentifierCode, tokenURIDiamond, userDefinePrice, appraisalPrice1))
+      .to.not.reverted;
+    await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice)).to
+      .not.reverted;
+    await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice)).to
+      .not.reverted;
+    await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice)).to
+      .not.reverted;
+  };
 
-    const tokenURI = "https://ipfs.io/ipfs/QmRkk4SkhzxKs7s9EkxP9zU9VpFfEMWRT3aYbRtdiE8oUY";
-    const tokenURIDiamond = "https://ipfs.io/ipfs/QmRYkXnQSvyKVJ9iDJ27a8KfwKny88mpZ6WyNeHQJC6qje";
-    const tokenURIOther = "https://ipfs.io/ipfs/QmTM6pgQRbdJ7kfk1UYQDJE6g95Z2pc7g1Sb5rE1GY4JdN";
-
-    const userDefinePrice = ethers.BigNumber.from(0);
-    const userDefinePrice1 = ethers.BigNumber.from(1000);
-
-    const appraisalPrice = ethers.BigNumber.from(0);
-    const appraisalPrice1 = ethers.BigNumber.from(3500);
-
+  describe("Tests", function () {
     beforeEach(async () => {
-      await deploy();
-      await unpause();
+      await reset();
+
+      await deploy(false);
+      await setSpec();
+      await unpauseAll();
+      await transferUsdtToUser();
     });
 
-    it("2.0 Should mint NFT to user", async function () {
-      const consummer = await transcaAssetNFTContract.connect(owner).setAggregator(aggregatorProxyXAU);
-      await consummer.wait();
+    it("can mint normal NFT", async () => {
+      await mintManyNFTs();
+    });
 
-      // [MintNFT]
-      const nft = await transcaAssetNFTContract
-        .connect(owner)
-        .safeMint(owner.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice);
-      await nft.wait();
-      const ownerOf = await transcaAssetNFTContract.ownerOf(0);
-      console.log("7s200:owner-of-0:before", ownerOf);
+    it.skip("can mint NFT on network", async () => {
+      await setAggregator();
 
-      const nft1 = await transcaAssetNFTContract
-        .connect(owner)
-        .safeMint(owner.address, weight, expireTime, assetTypeDIAMOND, indentifierCode, tokenURIDiamond, userDefinePrice, appraisalPrice1);
-      await nft1.wait();
-      const ownerOf1 = await transcaAssetNFTContract.ownerOf(1);
-      console.log("7s200:owner-of-1:before", ownerOf1);
+      await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice)).to.not
+        .reverted;
+    });
 
-      const nft2 = await transcaAssetNFTContract
-        .connect(owner)
-        .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice);
-      await nft2.wait();
-      const nft3 = await transcaAssetNFTContract
-        .connect(owner)
-        .safeMint(owner.address, weight, expireTime, assetTypeOTHER, indentifierCode, tokenURIOther, userDefinePrice1, appraisalPrice);
-      await nft3.wait();
-      const ownerOf3 = await transcaAssetNFTContract.ownerOf(1);
-      console.log("7s200:owner-of-3:before", ownerOf3);
+    it("can create borrow with NFT", async () => {
+      await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice)).to.not
+        .reverted;
+      await expect(transcaAssetNFT.connect(addr1).setApprovalForAll(transcaIntermediation.address, true)).to.not.reverted;
+      await expect(transcaIntermediation.connect(addr1).createBorrow(0, transcaAssetNFT.address, 1, 1, 10)).to.not.reverted;
+    });
 
-      // [Borrow - Request]
-      // const nftId = 0;
-      // const _inLoanAmount = ethers.utils.parseUnits("50", 18);
-      // const _inInterateRateAmount = ethers.utils.parseUnits("10", 18);
-      // const _inDuration = 100_000;
+    it("can direct lend", async () => {
+      await expect(transcaAssetNFT.connect(owner).safeMint(addr1.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice)).to.not
+        .reverted;
+      await expect(transcaAssetNFT.connect(addr1).setApprovalForAll(transcaIntermediation.address, true)).to.not.reverted;
 
-      // const borrowRequest = await transcaBorrowContract.connect(owner).createBorrowAsset(nftId, false, _inLoanAmount, _inInterateRateAmount, _inDuration);
-      // await borrowRequest.wait();
-      // const ownerOf0AferCreateBorrowReq = await transcaAssetNFTContract.ownerOf(0);
-      // console.log("7s200:owner-of-0:before", ownerOf0AferCreateBorrowReq);
+      await expect(transcaIntermediation.connect(addr1).createBorrow(0, transcaAssetNFT.address, 5, 5, 10)).to.not.reverted;
+      expect(await transcaAssetNFT.ownerOf(0)).to.eq(transcaIntermediation.address);
 
-      // const allBorrowReq = await transcaBorrowContract.getAllBorrowsRequest();
-      // console.log("7s200:allBorrow", allBorrowReq);
+      expect(await usdtSimulator.balanceOf(addr2.address)).to.eq(ethers.utils.parseUnits("5000000", 18));
 
-      // [Balance-of]
-      await transcaToken.connect(owner).transfer(transcaIntermediationContract.address, ethers.utils.parseUnits("50000000", 18));
-      await transcaToken.connect(owner).transfer(addr1.address, ethers.utils.parseUnits("5000000", 18));
-      await transcaToken.connect(owner).transfer(addr2.address, ethers.utils.parseUnits("1000000", 18));
+      await expect(usdtSimulator.connect(addr2).approve(transcaIntermediation.address, ethers.utils.parseUnits("1", 0))).to.not.reverted;
+      await expect(transcaIntermediation.connect(addr2).createLendOffer(0, 5)).to.revertedWith("ERC20:EA");
 
-      await transcaToken.connect(owner).approve(transcaIntermediationContract.address, ethers.utils.parseUnits("1000000", 18), { from: owner.address });
-      await transcaToken.connect(addr1).approve(transcaIntermediationContract.address, ethers.utils.parseUnits("1000000", 18), { from: addr1.address });
-      await transcaToken.connect(addr2).approve(transcaIntermediationContract.address, ethers.utils.parseUnits("1000000", 18), { from: addr2.address });
+      await expect(usdtSimulator.connect(addr2).approve(transcaIntermediation.address, ethers.utils.parseUnits("5", 0))).to.not.reverted;
+      await expect(transcaIntermediation.connect(addr2).createLendOffer(0, 5)).to.not.reverted;
 
-      // [User 1,2 create lend offer req]
-      // const user1BalanceBeforeCreateReq = await transcaToken.balanceOf(addr1.address);
-      // console.log("7s200:user1BalanceBeforeCreateReq:", user1BalanceBeforeCreateReq);
-      // const user2BalanceBeforeCreateReq = await transcaToken.balanceOf(addr2.address);
-      // console.log("7s200:user2BalanceBeforeCreateReq:", user2BalanceBeforeCreateReq);
-      // const smcBalanceBeforeCreatereq = await transcaToken.balanceOf(transcaBorrowContract.address);
-      // console.log("7s200:balance:1", smcBalanceBeforeCreatereq);
+      expect(await usdtSimulator.balanceOf(addr1.address)).to.eq(ethers.BigNumber.from(5));
+    });
 
-      // const user1LendReq = await transcaBorrowContract
-      //   .connect(addr1)
-      //   .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("45", 18), ethers.utils.parseUnits("5", 18), _inDuration);
-      // await user1LendReq.wait();
-      // const user2LendReq = await transcaBorrowContract
-      //   .connect(addr2)
-      //   .createLendOfferForBorrowReq(allBorrowReq[0]._borrowReqId, ethers.utils.parseUnits("30", 18), ethers.utils.parseUnits("4", 18), _inDuration);
-      // await user2LendReq.wait();
+    it("can handle bundle", async () => {
+      await mintManyNFTs();
 
-      // const allLenderByBorrowReq = await transcaBorrowContract.getAllLendReqByNFTId(allBorrowReq[0]._borrowReqId);
-      // console.log("7s200:allLenderByBorrowReq", allLenderByBorrowReq);
+      await expect(transcaAssetNFT.connect(addr1).setApprovalForAll(transcaBundleNFT.address, true)).to.not.reverted;
+      await expect(transcaBundleNFT.connect(addr1).deposit([0, 1])).to.not.reverted;
 
-      // const user1BalanceAfterCreateReq = await transcaToken.balanceOf(addr1.address);
-      // console.log("7s200:user1BalanceAfterCreateReq", user1BalanceAfterCreateReq);
-      // const user2BalanceAfterCreateReq = await transcaToken.balanceOf(addr2.address);
-      // console.log("7s200:user1BalanceAfterCreateReq", user2BalanceAfterCreateReq);
-      // const balanceOfSMCAfterCreateReq = await transcaToken.balanceOf(transcaBorrowContract.address);
-      // console.log("7s200:balanceOfSMCAfterCreateReq", balanceOfSMCAfterCreateReq);
+      expect(await transcaAssetNFT.balanceOf(transcaBundleNFT.address)).to.eq(ethers.BigNumber.from(2));
+      expect(await transcaBundleNFT.balanceOf(addr1.address)).to.eq(ethers.BigNumber.from(1));
 
-      // [Mint bundle]
-      // const mintBundle = await transcaBundleNFTContract.deposit([0, 1]);
-      // console.log("7s200:bundle", mintBundle);
-      // const mintwait = await mintBundle.wait();
-      // console.log("7s200:mintwait", mintwait);
+      expect(JSON.stringify(await transcaBundleNFT.getAllBundleByOwner(addr1.address))).to.eq(
+        '[[{"type":"BigNumber","hex":"0x00"},[{"type":"BigNumber","hex":"0x00"},{"type":"BigNumber","hex":"0x01"}]]]',
+      );
 
-      // const ownerOf2 = await transcaAssetNFTContract.ownerOf(0);
-      // console.log("7s200:owner-of-0:after", ownerOf2);
-      // const ownerOf3 = await transcaAssetNFTContract.ownerOf(1);
-      // console.log("7s200:owner-of-1:after", ownerOf3);
+      await expect(transcaBundleNFT.connect(addr1).withdraw(0)).to.not.reverted;
+      expect(await transcaAssetNFT.balanceOf(transcaBundleNFT.address)).to.eq(ethers.BigNumber.from(0));
+      expect(await transcaBundleNFT.balanceOf(addr1.address)).to.eq(ethers.BigNumber.from(0));
+    });
 
-      // const bundleDetail = await transcaBundleNFTContract.getBundle(0);
-      // console.log("7s200:bundleDetail", bundleDetail);
-      // const ownerOfbundleAfterMint = await transcaBundleNFTContract.getOwner(0);
-      // console.log("7s200:owner-bundle-after-mint", ownerOfbundleAfterMint);
-
-      // const allbundle = await transcaBundleNFTContract.getAllBunelByOwner(owner.address);
-      // console.log("7s200:allBundle", allbundle);
-
-      // [Withdraw NFTs on bundle by bundle id]
-      // const withdraw = await transcaBundleNFTContract.withdraw(0);
-      // console.log("7s200:bundle:withdraw", withdraw);
-
-      // const ownerOf4 = await transcaAssetNFTContract.ownerOf(0);
-      // console.log("7s200:owner-of-0:withdraw", ownerOf4);
-      // const ownerOf5 = await transcaAssetNFTContract.ownerOf(1);
-      // console.log("7s200:owner-of-1:withdraw", ownerOf5);
-      // const bundleDetail2 = await transcaBundleNFTContract.getBundle(0);
-      // console.log("7s200:bundleDetail", bundleDetail2);
-      // const ownerOfbundleAfterWithdraw = await transcaBundleNFTContract.getOwner(0);
-      // console.log("7s200:owner-bundle-after", ownerOfbundleAfterWithdraw);
-
+    it.skip("Should mint NFT to user", async function () {
       // [Ignore]
       // const bundle = await transcaBundleNFTContract.getAssetAttribute(0);
       // console.log("7s200:bundle", bundle);
       // const asset = await transcaAssetNFTContract.getAllAssetByUser(owner.address);
       // console.log("7s200:asset", asset);
-
       // const nfts = await transcaAssetNFTContract.getAllAssetByUser(owner);
       // const nfts2 = await transcaAssetNFTContract.getAllAssetByUser(addr1);
       // console.log("7s200:nfts:1", nfts);
