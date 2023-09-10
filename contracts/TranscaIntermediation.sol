@@ -103,11 +103,11 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
         token = IERC20(_token);
     }
 
-    function isERC721Contract(address contractAddress) external view returns (bool) {
+    function isERC721Contract(address contractAddress, uint256 nftId) external view returns (bool) {
         IERC721 nftContract = IERC721(contractAddress);
 
         // Check if the contract implements the necessary functions
-        try nftContract.ownerOf(0) returns (address) {
+        try nftContract.ownerOf(nftId) returns (address) {
             // ERC721 contract found
             return true;
         } catch {
@@ -118,7 +118,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
 
     function createBorrow(uint256 _nftId, address _nftAddress, uint256 _amount, uint256 _minAmount, uint256 _duration) public whenNotPaused returns (uint256) {
         // action
-        require(this.isERC721Contract(_nftAddress), "NFT Only");
+        require(this.isERC721Contract(_nftAddress, _nftId), "NFT Only");
         IERC721 nftContract = IERC721(_nftAddress);
         address owner = IERC721(_nftAddress).ownerOf(_nftId);
 
@@ -164,7 +164,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
 
     function createQuickBorrow(uint256 _nftId, address _nftAddress, uint256 _duration) public whenNotPaused returns (uint256) {
         // action
-        require(this.isERC721Contract(_nftAddress), "NFT Only");
+        require(this.isERC721Contract(_nftAddress, _nftId), "NFT Only");
         IERC721 nftContract = IERC721(_nftAddress);
         address owner = IERC721(_nftAddress).ownerOf(_nftId);
 
@@ -259,7 +259,7 @@ contract TranscaIntermediation is Initializable, AccessControlUpgradeable, Pausa
     }
 
     function showQuickBorrowAmount(uint256 _nftId, address _nftAddress) public view returns (uint256) {
-        require(this.isERC721Contract(_nftAddress), "NFT Only");
+        require(this.isERC721Contract(_nftAddress, _nftId), "NFT Only");
 
         address owner = IERC721(_nftAddress).ownerOf(_nftId);
 
