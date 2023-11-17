@@ -41,6 +41,133 @@ contract TranscaAssetNFT is
     Counters.Counter public assetId;
     mapping(uint256 => ITransca.Asset) public assets;
 
+    //multisign
+    struct MintRequest {
+        address to;
+        int256 weight;
+        uint256 expireTime;
+        uint16 assetType;
+        string indentifierCode;
+        string tokenUri;
+        int256 userDefinePrice;
+        int256 appraisalPrice;
+        bool executed;
+        uint numConfirmations;
+    } 
+
+    struct ConfirmMintRequest {
+        bool isAuditSign;
+        bool isStockerSign;
+        bool isTranscaSign;
+    }
+
+    address public audit;
+    address public stocker;
+    address public transca;
+
+    mapping(address => bool) public isOwner;
+    uint256 public numConfirmationsRequired;
+    mapping(uint => mapping(address => bool)) public isConfirmed;
+    MintRequest[] public mintRequests;
+
+    modifier onlyOwner() {
+        require(isOwner[msg.sender], "not owner");
+        _;
+    }
+
+    modifier txExists(uint _txIndex) {
+        require(_txIndex < mintRequests.length, "tx does not exist");
+        _;
+    }
+
+    modifier notExecuted(uint _txIndex) {
+        require(!mintRequests[_txIndex].executed, "tx already executed");
+        _;
+    }
+
+    modifier notConfirmed(uint _txIndex) {
+        require(!isConfirmed[_txIndex][msg.sender], "tx already confirmed");
+        _;
+    }
+
+    modifier notMultiSign(address _signer) {
+        require(_signer == audit || _signer == stocker || _signer == transca, "sign rejected!");
+        _;
+    }
+
+    function setOwnerMultiSign(address _transca, address _audit, address _stocker) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        transca = _transca;
+        audit = _audit;
+        stocker = _stocker;
+        numConfirmationsRequired = 3;
+    }
+
+    function requestMintRWA ( 
+        // address _to,
+        int256 _weight,
+        uint256 _expireTime,
+        uint16 _assetType,
+        string memory _indentifierCode,
+        string memory _tokenUri,
+        int256 _userDefinePrice,
+        int256 _appraisalPrice
+    ) public {
+        mintRequests.push(
+            MintRequest({
+                to: msg.sender,
+                weight: _weight,
+                expireTime: _expireTime,
+                assetType: _assetType,
+                indentifierCode: _indentifierCode,
+                tokenUri: _tokenUri,
+                userDefinePrice: _userDefinePrice,
+                appraisalPrice: _appraisalPrice,
+                executed: false,
+                numConfirmations: 0
+            })
+        );
+    }
+
+    function confirmTransaction( uint _txIndex ) public txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) notMultiSign(msg.sender) {
+        MintRequest memory transaction = mintRequests[_txIndex];
+        transaction.numConfirmations += 1;
+        isConfirmed[_txIndex][msg.sender] = true;
+        mintRequests[_txIndex] = transaction;
+    } 
+
+    function executeMint(
+        uint _txIndex
+    ) public onlyRole(MINTER_ROLE) txExists(_txIndex) notExecuted(_txIndex) notMultiSign(msg.sender) returns (MintRequest memory) {
+        MintRequest memory transaction = mintRequests[_txIndex];
+
+        require(
+            transaction.numConfirmations >= numConfirmationsRequired,
+            "cannot execute tx"
+        );
+
+        uint256 _assetId = assetId.current();
+
+        uint256 startTime = block.timestamp;
+
+        PhysicalType assetType = PhysicalType(transaction.assetType);
+
+        _safeMint(transaction.to, _assetId);
+        _setTokenURI(_assetId, transaction.tokenUri);
+        setAsset(transaction.to, _assetId, transaction.weight, startTime, transaction.expireTime, transaction.indentifierCode, uint16(assetType), transaction.userDefinePrice, transaction.appraisalPrice);
+
+        assetId.increment();
+
+        transaction.executed = true;
+
+        mintRequests[_txIndex] = transaction;
+
+        return transaction;
+    }
+
+    function getAllMintRequest () public view returns (MintRequest[] memory) {
+        return mintRequests;
+    }
+
     event Issue(address indexed _userAddress, uint256 indexed _id, int256 _weight, string _indentifierCode, uint16 _assestType);
 
     /// @custom:oz-upgrades-unsafe-allow constructor

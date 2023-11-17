@@ -11,6 +11,8 @@ import { HardhatUserConfig } from "hardhat/config";
 dotenv.config({ path: __dirname + "/.env" });
 
 const config: HardhatUserConfig = {
+  // defaultNetwork: "baobab",
+
   solidity: {
     compilers: [
       {
@@ -33,26 +35,26 @@ const config: HardhatUserConfig = {
     baobab: {
       url: "https://api.baobab.klaytn.net:8651",
       timeout: 2_147_483_647,
-      accounts: [process.env.PRIVATE_KEY!, process.env.PRIVATE_KEY_1!, process.env.PRIVATE_KEY_2!],
+      accounts: [process.env.PRIVATE_KEY!, process.env.PRIVATE_KEY_1!, process.env.PRIVATE_KEY_2!, process.env.PRIVATE_KEY_3!, process.env.PRIVATE_KEY_4!],
       gas: 5242880,
       gasPrice: 51640625000,
     },
-    goerli: {
-      url: "https://goerli-eth.w3node.com/af4e93a4f1e946ce101ec53912e4daf943759b8ac2b30f33c3b1f73ae4ba0414/api",
-      accounts: [process.env.PRIVATE_KEY!],
-      timeout: 2_147_483_647,
-    },
-    sepolia: {
-      url: "https://eth-sepolia.g.alchemy.com/v2/DXrYz6Q2h-LGE_BZ3vO_rljEF7W4tO65",
-      accounts: [process.env.PRIVATE_KEY!],
-      chainId: 11155111,
-      timeout: 2_147_483_647,
-    },
-    ethereum: {
-      url: "https://eth-mainnet.g.alchemy.com/v2/22gU7WLjJUMVrvia8yOmeU8MDanUuLdW",
-      accounts: [process.env.PRIVATE_KEY!],
-      timeout: 2_147_483_647,
-    },
+    // goerli: {
+    //   url: "https://goerli-eth.w3node.com/af4e93a4f1e946ce101ec53912e4daf943759b8ac2b30f33c3b1f73ae4ba0414/api",
+    //   accounts: [process.env.PRIVATE_KEY!],
+    //   timeout: 2_147_483_647,
+    // },
+    // sepolia: {
+    //   url: "https://eth-sepolia.g.alchemy.com/v2/DXrYz6Q2h-LGE_BZ3vO_rljEF7W4tO65",
+    //   accounts: [process.env.PRIVATE_KEY!],
+    //   chainId: 11155111,
+    //   timeout: 2_147_483_647,
+    // },
+    // ethereum: {
+    //   url: "https://eth-mainnet.g.alchemy.com/v2/22gU7WLjJUMVrvia8yOmeU8MDanUuLdW",
+    //   accounts: [process.env.PRIVATE_KEY!],
+    //   timeout: 2_147_483_647,
+    // },
   },
   abiExporter: {
     path: "abi",
