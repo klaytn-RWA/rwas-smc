@@ -11,6 +11,7 @@ async function main() {
   let transcaBundleNFT: Contract;
   let transcaIntermediation: Contract;
   let usdtSimulator: Contract;
+  let lottery: Contract;
 
   let owner: SignerWithAddress, addr1: SignerWithAddress, addr2: SignerWithAddress;
 
@@ -32,12 +33,20 @@ async function main() {
     const deployTranscaIntermediation = await upgrades.deployProxy(TranscaIntermediation);
     transcaIntermediation = await deployTranscaIntermediation.deployed();
 
+    const Lottery = await ethers.getContractFactory("Lottery");
+    const deployLottery = await upgrades.deployProxy(Lottery);
+    lottery = await deployLottery.deployed();
+
     if (showConsole) {
       console.table({
         transcaAssetNFT: transcaAssetNFT.address,
         transcaBundleNFT: transcaBundleNFT.address,
         transcaIntermediation: transcaIntermediation.address,
         usdtSimulator: usdtSimulator.address,
+        lottery: lottery.address,
+        transca: owner.address,
+        audit: addr1.address,
+        stocker: addr2.address,
       });
     }
   };
@@ -47,12 +56,16 @@ async function main() {
     await (await transcaIntermediation.connect(owner).setAsset(transcaAssetNFT.address)).wait();
     await (await transcaIntermediation.connect(owner).setBundle(transcaBundleNFT.address)).wait();
     await (await transcaIntermediation.connect(owner).setToken(usdtSimulator.address)).wait();
+    await (await lottery.connect(owner).setAsset(transcaAssetNFT.address)).wait();
+    await (await lottery.connect(owner).setToken(usdtSimulator.address)).wait();
+    await (await transcaAssetNFT.connect(owner).setOwnerMultiSign(owner.address, addr1.address, addr2.address)).wait();
   };
 
   const unpauseAll = async () => {
     await (await transcaAssetNFT.connect(owner).unpause()).wait();
     await (await transcaBundleNFT.connect(owner).unpause()).wait();
     await (await transcaIntermediation.connect(owner).unpause()).wait();
+    // await (await lottery.connect(owner).unpause()).wait();
   };
 
   const setAggregator = async () => {

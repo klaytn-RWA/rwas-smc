@@ -53,13 +53,10 @@ contract TranscaAssetNFT is
         int256 appraisalPrice;
         bool executed;
         uint numConfirmations;
-    } 
-
-    struct ConfirmMintRequest {
         bool isAuditSign;
         bool isStockerSign;
         bool isTranscaSign;
-    }
+    } 
 
     address public audit;
     address public stocker;
@@ -95,6 +92,44 @@ contract TranscaAssetNFT is
         _;
     }
 
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() public initializer {
+        __ERC721_init("Transca NFTs", "TSA");
+
+        __AccessControl_init();
+        __Pausable_init();
+        __ERC721Enumerable_init();
+        __ERC721URIStorage_init();
+        __ERC721Burnable_init();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, msg.sender);
+
+        _pause();
+    }
+
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
+        return super.tokenURI(tokenId);
+    }
+
+    function setAggregator(address aggregatorProxy) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        dataFeed = IAggregator(aggregatorProxy);
+    }
+
     function setOwnerMultiSign(address _transca, address _audit, address _stocker) public onlyRole(DEFAULT_ADMIN_ROLE) {
         transca = _transca;
         audit = _audit;
@@ -123,13 +158,25 @@ contract TranscaAssetNFT is
                 userDefinePrice: _userDefinePrice,
                 appraisalPrice: _appraisalPrice,
                 executed: false,
-                numConfirmations: 0
+                numConfirmations: 0,
+                isAuditSign: false,
+                isStockerSign: false,
+                isTranscaSign: false
             })
         );
     }
 
     function confirmTransaction( uint _txIndex ) public txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) notMultiSign(msg.sender) {
         MintRequest memory transaction = mintRequests[_txIndex];
+        if(msg.sender == audit) {
+            transaction.isAuditSign = true;
+        }
+        if(msg.sender == stocker) {
+            transaction.isStockerSign = true;
+        }
+        if(msg.sender == transca) {
+            transaction.isTranscaSign = true;
+        }
         transaction.numConfirmations += 1;
         isConfirmed[_txIndex][msg.sender] = true;
         mintRequests[_txIndex] = transaction;
@@ -168,44 +215,18 @@ contract TranscaAssetNFT is
         return mintRequests;
     }
 
+    function getAllMintRequestByUser (address _user) public view returns (MintRequest[] memory) {
+        MintRequest[] memory result = new MintRequest[](10);
+        for (uint i = 0; i < mintRequests.length; i++) {
+            if (_user == mintRequests[i].to) {
+                result[i] = mintRequests[i];
+            }
+        }
+        return result;
+    }
+
     event Issue(address indexed _userAddress, uint256 indexed _id, int256 _weight, string _indentifierCode, uint16 _assestType);
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize() public initializer {
-        __ERC721_init("Transca NFTs", "TSA");
-
-        __AccessControl_init();
-        __Pausable_init();
-        __ERC721Enumerable_init();
-        __ERC721URIStorage_init();
-        __ERC721Burnable_init();
-
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
-
-        _pause();
-    }
-
-    function pause() public onlyRole(PAUSER_ROLE) {
-        _pause();
-    }
-
-    function unpause() public onlyRole(PAUSER_ROLE) {
-        _unpause();
-    }
-
-    function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
-        return super.tokenURI(tokenId);
-    }
-
-    function setAggregator(address aggregatorProxy) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        dataFeed = IAggregator(aggregatorProxy);
-    }
 
     function _burn(uint256 _in_tokenId) internal override(ERC721URIStorageUpgradeable, ERC721Upgradeable) whenNotPaused onlyRole(DEFAULT_ADMIN_ROLE) {
         super._burn(_in_tokenId);
@@ -246,7 +267,7 @@ contract TranscaAssetNFT is
         string memory _tokenUri,
         int256 _userDefinePrice,
         int256 _appraisalPrice
-    ) public whenNotPaused onlyRole(MINTER_ROLE) returns (uint256) {
+    ) public onlyRole(MINTER_ROLE) returns (uint256) {
         uint256 _assetId = assetId.current();
 
         uint256 startTime = block.timestamp;
