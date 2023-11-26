@@ -44,6 +44,10 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
 
     mapping(uint256 => mapping(uint256 => address)) public buyers;
 
+    event __Create_Lottery(uint256 indexed _lotteryId, uint256 indexed _assetId, uint256 expired);
+    event __Buy_Slot(address indexed _buyer, uint256 indexed _number);
+    event __Update_Winner(uint256 indexed _winNumber, address indexed _winner);
+
 
     function initialize() public initializer {
         __AccessControl_init();
@@ -76,7 +80,16 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
         uint256 _lotteryId = lotteryId.current();
 
         uint256 startTime = block.timestamp;
-        
+
+        ITransca.AssetR memory asset = assetNft.getAssetDetail(_assetId);
+        int256 _price = 1000000000000000000;
+        if(asset.appraisalPrice != 0){
+            _price = asset.appraisalPrice / 5; 
+        }
+        if(asset.oraklPrice != 0){
+            _price = asset.oraklPrice / 5; 
+        }
+      
         assetNft.safeTransferFrom(msg.sender, address(this), _assetId);
 
         LotterySession memory _lottery = LotterySession({
@@ -88,10 +101,12 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
             winner: address(0),
             winNumber: 0,
             totalNumber: 5,
-            pricePerNumber: 1
+            pricePerNumber: uint256(_price)
         });
 
         lotteries[_lotteryId] = _lottery;
+
+        emit __Create_Lottery(_lotteryId, _assetId, startTime + _duration);
 
         lotteryId.increment();
     }
@@ -108,6 +123,8 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
             buyers[_lottery.id][_number] = msg.sender; 
         }
 
+        emit __Buy_Slot(msg.sender, _number);
+
         return true;
     }
 
@@ -122,9 +139,11 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
                 assetNft.safeTransferFrom(address(this), buyers[_lottery.id][_number], _lottery.assetId);
                 _lottery.winner = buyers[_lottery.id][_number];
                 lotteries[_lotteryId] = _lottery;
+                emit __Update_Winner(_number, _lottery.winner);
+                // return;
             }
         }
-
+        return;
     }
 
     function getLottery (uint256 _lotteryId) public view returns (LotterySession memory) {

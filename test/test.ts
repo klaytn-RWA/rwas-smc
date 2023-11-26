@@ -72,33 +72,31 @@ describe("Transca Vault assests", function () {
   };
 
   const setSpec = async () => {
-    // const as = await (await transcaAssetNFT.connect(owner).setOwnerMultiSign(owner.address, addr1.address, addr2.address)).wait();
-
-    await expect(await (await transcaAssetNFT.connect(owner).setOwnerMultiSign(owner.address, addr1.address, addr2.address)).wait()).to.not.reverted;
-    await expect(await (await transcaBundleNFT.connect(owner).setAsset(transcaAssetNFT.address)).wait()).to.not.reverted;
-    await expect(await (await transcaIntermediation.connect(owner).setAsset(transcaAssetNFT.address)).wait()).to.not.reverted;
-    await expect(await (await transcaIntermediation.connect(owner).setBundle(transcaBundleNFT.address)).wait()).to.not.reverted;
-    await expect(await (await await transcaIntermediation.connect(owner).setToken(usdtSimulator.address)).wait()).to.not.reverted;
-    await expect(await (await lottery.connect(owner).setAsset(transcaAssetNFT.address)).wait()).to.not.reverted;
-    await expect(await (await lottery.connect(owner).setToken(usdtSimulator.address)).wait()).to.not.reverted;
+    await expect(await transcaAssetNFT.connect(owner).setOwnerMultiSign(owner.address, addr1.address, addr2.address)).to.not.reverted;
+    await expect(await transcaBundleNFT.connect(owner).setAsset(transcaAssetNFT.address)).to.not.reverted;
+    await expect(await transcaIntermediation.connect(owner).setAsset(transcaAssetNFT.address)).to.not.reverted;
+    await expect(await transcaIntermediation.connect(owner).setBundle(transcaBundleNFT.address)).to.not.reverted;
+    await expect(await transcaIntermediation.connect(owner).setToken(usdtSimulator.address)).to.not.reverted;
+    await expect(await lottery.connect(owner).setAsset(transcaAssetNFT.address)).to.not.reverted;
+    await expect(await lottery.connect(owner).setToken(usdtSimulator.address)).to.not.reverted;
   };
 
   const unpauseAll = async () => {
-    await expect(await (await transcaAssetNFT.connect(owner).unpause()).wait()).to.not.reverted;
-    await expect(await (await transcaBundleNFT.connect(owner).unpause()).wait()).to.not.reverted;
-    await expect(await (await transcaIntermediation.connect(owner).unpause()).wait()).to.not.reverted;
-    await expect(await (await lottery.connect(owner).unpause()).wait()).to.not.reverted;
+    await expect(await transcaAssetNFT.connect(owner).unpause()).to.not.reverted;
+    await expect(await transcaBundleNFT.connect(owner).unpause()).to.not.reverted;
+    await expect(await transcaIntermediation.connect(owner).unpause()).to.not.reverted;
+    await expect(await lottery.connect(owner).unpause()).to.not.reverted;
   };
-
-  // const pauseAll = async () => {
-  //   await expect(transcaAssetNFT.connect(owner).pause()).to.not.reverted;
-  //   await expect(transcaBundleNFT.connect(owner).pause()).to.not.reverted;
-  //   await expect(transcaIntermediation.connect(owner).pause()).to.not.reverted;
-  // };
 
   const transferUsdtToUser = async () => {
     // await expect(usdtSimulator.connect(owner).transfer(addr1.address, ethers.utils.parseUnits("5000000", 18))).to.not.reverted;
     await expect(await (await usdtSimulator.connect(owner).transfer(addr2.address, ethers.utils.parseUnits("5000000", 18))).wait()).to.not.reverted;
+  };
+
+  const getAll = async () => {
+    console.table({
+      transca_paused: await transcaAssetNFT.paused(),
+    });
   };
 
   // const reset = async () => {
@@ -137,12 +135,11 @@ describe("Transca Vault assests", function () {
 
   describe("Tests", function () {
     beforeEach(async () => {
-      // await reset();
-
       await deploy(true);
       await setSpec();
       await unpauseAll();
       await transferUsdtToUser();
+      await getAll();
     });
 
     it("can create mint request", async () => {
