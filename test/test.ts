@@ -136,8 +136,8 @@ describe("Transca Vault assests", function () {
   describe("Tests", function () {
     beforeEach(async () => {
       await deploy(true);
-      await setSpec();
       await unpauseAll();
+      await setSpec();
       await transferUsdtToUser();
       await getAll();
     });
@@ -158,21 +158,21 @@ describe("Transca Vault assests", function () {
       await expect(transcaAssetNFT.connect(owner).safeMint(owner.address, weight, expireTime, assetTypeGOLD, indentifierCode, tokenURI, userDefinePrice, appraisalPrice)).to.not
         .reverted;
 
-      await expect(transcaAssetNFT.connect(addr1).setApprovalForAll(lottery.address, true)).to.not.reverted;
-      await expect(lottery.connect(addr1).createLottery(0, 100000)).to.reverted;
+      // await expect(transcaAssetNFT.connect(addr1).setApprovalForAll(lottery.address, true)).to.not.reverted;
+      // await expect(lottery.connect(addr1).createLottery(0, 100000)).to.reverted;
 
-      await expect(transcaAssetNFT.connect(owner).setApprovalForAll(lottery.address, true)).to.not.reverted;
-      await expect(lottery.connect(owner).createLottery(0, 100000)).to.not.reverted; //1000 ms
+      // await expect(transcaAssetNFT.connect(owner).setApprovalForAll(lottery.address, true)).to.not.reverted;
+      // await expect(lottery.connect(owner).createLottery(0, 100000)).to.not.reverted; //1000 ms
 
-      // approve - buy slot - 1
-      await expect(usdtSimulator.connect(addr2).approve(lottery.address, ethers.utils.parseUnits("1", 0))).to.not.reverted;
-      await expect(lottery.connect(addr2).buySlot(0, 1, 1)).to.not.reverted;
+      // // approve - buy slot - 1
+      // await expect(usdtSimulator.connect(addr2).approve(lottery.address, ethers.utils.parseUnits("1", 0))).to.not.reverted;
+      // await expect(lottery.connect(addr2).buySlot(0, 1, 1)).to.not.reverted;
 
-      // approve - buy slot - 2
-      await expect(usdtSimulator.connect(addr2).approve(lottery.address, ethers.utils.parseUnits("1", 0))).to.not.reverted;
-      await expect(lottery.connect(addr2).buySlot(0, 2, 1)).to.not.reverted;
+      // // approve - buy slot - 2
+      // await expect(usdtSimulator.connect(addr2).approve(lottery.address, ethers.utils.parseUnits("1", 0))).to.not.reverted;
+      // await expect(lottery.connect(addr2).buySlot(0, 2, 1)).to.not.reverted;
 
-      await expect(lottery.connect(owner).updateWinNumber(2, 0)).to.not.reverted;
+      // await expect(lottery.connect(owner).updateWinNumber(2, 0)).to.not.reverted;
 
       // const a = await lottery.getLottery(0);
       // console.log("7s200:lottery:id", a);

@@ -33,6 +33,7 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
         uint256 winNumber;
         uint256 totalNumber;
         uint256 pricePerNumber;
+        bool isSuccess;
     }
 
     struct BuyOffer {
@@ -101,7 +102,8 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
             winner: address(0),
             winNumber: 0,
             totalNumber: 5,
-            pricePerNumber: uint256(_price)
+            pricePerNumber: uint256(_price),
+            isSuccess: false
         });
 
         lotteries[_lotteryId] = _lottery;
@@ -138,7 +140,9 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
             if(buyers[_lottery.id][_number] != address(0)){
                 assetNft.safeTransferFrom(address(this), buyers[_lottery.id][_number], _lottery.assetId);
                 _lottery.winner = buyers[_lottery.id][_number];
+                _lottery.isSuccess = true;
                 lotteries[_lotteryId] = _lottery;
+            
                 emit __Update_Winner(_number, _lottery.winner);
                 // return;
             }

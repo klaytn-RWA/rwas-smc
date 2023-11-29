@@ -1879,6 +1879,26 @@
       "address": "0x10ef316c09DeF3eda3dcC2e8775842B56B612C0A",
       "txHash": "0xd76cc570da39308d4daebfb04676ba9389c6f5c10e798e42d4a1fd8fde311e30",
       "kind": "transparent"
+    },
+    {
+      "address": "0xC101C2dbC5a93A7a3a527A1DD4a23C8d9A02DB7f",
+      "txHash": "0xd43a4583df0ae6110bf8dc57c65650d8215e958a14c46b4f87ee4ea80cf9c336",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x321A82Bd157009025f9c238b9955FDbb6f8b710a",
+      "txHash": "0xe1d5947c483b672224251e2bb11e600c8a6d8371701fe5a85ce0fb8a93aeb8ac",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xF70AB8d22c0f88130fBc06068e9C4Fdb6a50Dbfb",
+      "txHash": "0xde499e52c86beebf314707ad95ee28084c70d2c81fa01a097c052d1cb820f12b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6224B03b7ee0aDDAFe59C1bCE16e15FfE66364CF",
+      "txHash": "0x3c5053eb2221c9e2ecde0784de6d4d0a047c1afe08d7d48890d90b38dbd83c96",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -22466,6 +22486,274 @@
               }
             ],
             "numberOfBytes": "288"
+          },
+          "t_struct(RoleData)91_storage": {
+            "label": "struct AccessControlUpgradeable.RoleData",
+            "members": [
+              {
+                "label": "members",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "adminRole",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "a1711f63ac932660f7a79d212fdd03c99c490a8dea82ae0eff4227b16b8f8051": {
+      "address": "0x76a3C0515129bFCD1648176B8d0E21099255bb79",
+      "txHash": "0x481ac3dfef2e1ca857a4f87795b7abcbc6faeab3e5d6ff514b7a46037e12af1e",
+      "layout": {
+        "solcVersion": "0.8.20",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:63",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:68"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol:41"
+          },
+          {
+            "label": "_roles",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_bytes32,t_struct(RoleData)91_storage)",
+            "contract": "AccessControlUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol:62"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "AccessControlUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol:260"
+          },
+          {
+            "label": "_paused",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_bool",
+            "contract": "PausableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:29"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "PausableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:116"
+          },
+          {
+            "label": "lotteryId",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_struct(Counter)4319_storage",
+            "contract": "Lottery",
+            "src": "contracts/Lottery.sol:17"
+          },
+          {
+            "label": "assetNft",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_contract(TranscaAssetNFT)7297",
+            "contract": "Lottery",
+            "src": "contracts/Lottery.sol:19"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_contract(IERC20)4313",
+            "contract": "Lottery",
+            "src": "contracts/Lottery.sol:20"
+          },
+          {
+            "label": "lotteries",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_mapping(t_uint256,t_struct(LotterySession)5649_storage)",
+            "contract": "Lottery",
+            "src": "contracts/Lottery.sol:44"
+          },
+          {
+            "label": "buyers",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_address))",
+            "contract": "Lottery",
+            "src": "contracts/Lottery.sol:46"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(IERC20)4313": {
+            "label": "contract IERC20",
+            "numberOfBytes": "20"
+          },
+          "t_contract(TranscaAssetNFT)7297": {
+            "label": "contract TranscaAssetNFT",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_struct(RoleData)91_storage)": {
+            "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_uint256,t_address))": {
+            "label": "mapping(uint256 => mapping(uint256 => address))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(LotterySession)5649_storage)": {
+            "label": "mapping(uint256 => struct Lottery.LotterySession)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Counter)4319_storage": {
+            "label": "struct Counters.Counter",
+            "members": [
+              {
+                "label": "_value",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(LotterySession)5649_storage": {
+            "label": "struct Lottery.LotterySession",
+            "members": [
+              {
+                "label": "id",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "assetId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "createdAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "duration",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "expiredAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "winner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "winNumber",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "totalNumber",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "pricePerNumber",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "isSuccess",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "9"
+              }
+            ],
+            "numberOfBytes": "320"
           },
           "t_struct(RoleData)91_storage": {
             "label": "struct AccessControlUpgradeable.RoleData",
