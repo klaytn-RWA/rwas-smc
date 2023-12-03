@@ -134,13 +134,14 @@ contract Lottery is Initializable, IERC721ReceiverUpgradeable, AccessControlUpgr
         LotterySession memory _lottery = lotteries[_lotteryId];
         require(_lotteryId == lotteryId.current()-1 && lotteryId.current() > 0, "lottery session not exited"); 
         require(_number <= _lottery.totalNumber, "lottery number not exited"); 
+        require(_lottery.isSuccess == false, "done");
 
         if (_lottery.winNumber == 0 && _lottery.winner == address(0)){
             _lottery.winNumber = _number;
+            _lottery.isSuccess = true;
             if(buyers[_lottery.id][_number] != address(0)){
                 assetNft.safeTransferFrom(address(this), buyers[_lottery.id][_number], _lottery.assetId);
                 _lottery.winner = buyers[_lottery.id][_number];
-                _lottery.isSuccess = true;
                 lotteries[_lotteryId] = _lottery;
             
                 emit __Update_Winner(_number, _lottery.winner);

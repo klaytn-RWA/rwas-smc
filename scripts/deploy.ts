@@ -65,7 +65,7 @@ async function main() {
     await (await transcaAssetNFT.connect(owner).unpause()).wait();
     await (await transcaBundleNFT.connect(owner).unpause()).wait();
     await (await transcaIntermediation.connect(owner).unpause()).wait();
-    // await (await lottery.connect(owner).unpause()).wait();
+    await (await lottery.connect(owner).unpause()).wait();
   };
 
   const setAggregator = async () => {
